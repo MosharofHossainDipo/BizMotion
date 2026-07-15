@@ -16,42 +16,28 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
     @Autowired private UserRepository userRepository;
     @Autowired private RoleRepository roleRepository;
     @Autowired private JwtUtil jwtUtil;
+
     @GetMapping
     @PreAuthorize("hasAuthority('VIEW_USER')")
     public ResponseEntity<List<UserDto>> getAllUsers(HttpServletRequest request) {
         String token = request.getHeader("Authorization").substring(7);
         String callerRole = jwtUtil.extractRole(token);
         List<UserDto> users = userRepository.findAll().stream()
-                .filter(u -> {
-                    String uRole = u.getRole().getRoleName();
-                    if ("ADMIN".equals(callerRole) && "SUPER_ADMIN".equals(uRole)) return false;
-                    return true;
-                })
+                .filter(u -> !("ADMIN".equals(callerRole) && "SUPER_ADMIN".equals(u.getRole().getRoleName())))
                 .map(u -> new UserDto(u.getId(), u.getUsername(), u.getEmail(),
                         u.getRole().getRoleName(), u.getRole().getId(), u.isActive()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(users);
     }
-    @GetMapping("/roles-for-admin")
-    @PreAuthorize("hasAuthority('ASSIGN_ROLE')")
-    public ResponseEntity<List<?>> getRolesForCaller(HttpServletRequest request) {
-        String token = request.getHeader("Authorization").substring(7);
-        String callerRole = jwtUtil.extractRole(token);
-        List<?> roles = roleRepository.findAll().stream()
-                .filter(r -> {
-                    if ("ADMIN".equals(callerRole) && "SUPER_ADMIN".equals(r.getRoleName())) return false;
-                    return true;
-                })
-                .map(r -> new com.bizmotion.rbca.dto.RoleDto(r.getId(), r.getRoleName()))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(roles);
-    }
+
     @PutMapping("/{id}/role")
     @PreAuthorize("hasAuthority('ASSIGN_ROLE')")
     public ResponseEntity<String> assignRole(@PathVariable Long id,
@@ -70,6 +56,7 @@ public class UserController {
         userRepository.save(user);
         return ResponseEntity.ok("Role updated to " + role.getRoleName());
     }
+
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAuthority('EDIT_USER')")
     public ResponseEntity<String> setUserStatus(@PathVariable Long id,
@@ -84,6 +71,7 @@ public class UserController {
         userRepository.save(user);
         return ResponseEntity.ok(req.isActive() ? "User activated" : "User deactivated");
     }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('DELETE_USER')")
     public ResponseEntity<String> deleteUser(@PathVariable Long id, HttpServletRequest request) {
@@ -96,6 +84,7 @@ public class UserController {
         userRepository.deleteById(id);
         return ResponseEntity.ok("User deleted");
     }
+
     public static class StatusRequest {
         private boolean active;
         public boolean isActive() { return active; }

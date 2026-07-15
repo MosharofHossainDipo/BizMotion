@@ -4,6 +4,12 @@ spring:
     username: bizmotion
     password: "Bizmotion@123"
     driver-class-name: oracle.jdbc.OracleDriver
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
 
   jpa:
     hibernate:
