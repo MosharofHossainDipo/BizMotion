@@ -1,8 +1,87 @@
-<div class="cs-page">
-  <div class="cs-card">
-    <div class="cs-icon">&#128274;</div>
-    <h1 class="cs-title">Payments</h1>
-    <p class="cs-msg">Coming Soon</p>
-    <p class="cs-sub">This module is under active development.</p>
+<div class="payments-page">
+
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Payments</h1>
+      <p class="page-sub">Invoices awaiting full or partial payment</p>
+    </div>
+  </header>
+
+  <div class="filter-bar">
+    <div class="filter-field">
+      <label class="filter-label">Date From</label>
+      <input type="date" class="filter-input" [(ngModel)]="dateFrom" />
+    </div>
+    <div class="filter-field">
+      <label class="filter-label">Date To</label>
+      <input type="date" class="filter-input" [(ngModel)]="dateTo" />
+    </div>
+    <div class="filter-field">
+      <label class="filter-label">Customer</label>
+      <select class="filter-input" [(ngModel)]="customerId">
+        <option value="all">All Customers</option>
+        <option *ngFor="let c of customers" [ngValue]="c.id">{{ c.name }}</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label class="filter-label">Status</label>
+      <select class="filter-input" [(ngModel)]="statusFilter">
+        <option value="all">All</option>
+        <option value="Unpaid">Unpaid</option>
+        <option value="Partially Paid">Partially Paid</option>
+      </select>
+    </div>
+    <div class="filter-field grow">
+      <label class="filter-label">Search</label>
+      <input type="text" class="filter-input" placeholder="Search invoices..." [(ngModel)]="searchTerm" />
+    </div>
+    <button class="btn-primary apply-btn" (click)="applyFilters()">Apply Filters</button>
   </div>
+
+  <div class="state-row" *ngIf="loading">
+    <span class="spinner"></span> Loading payments...
+  </div>
+  <div class="state-row error-row" *ngIf="!loading && error">{{ error }}</div>
+
+  <div class="table-wrap" *ngIf="!loading && !error">
+    <table class="inv-table">
+      <thead>
+        <tr>
+          <th>Invoice #</th><th>Customer</th><th>Invoice Date</th><th>Due Date</th>
+          <th class="text-right">Amount</th><th class="text-right">Paid</th><th class="text-right">Remaining</th>
+          <th class="text-center">Status</th><th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let inv of paged" (click)="viewInvoice(inv)" class="clickable-row">
+          <td class="cell-id">{{ inv.invoiceNumber }}</td>
+          <td>{{ inv.customerName }}</td>
+          <td>{{ inv.invoiceDate | date:"dd/MM/yyyy" }}</td>
+          <td>{{ inv.dueDate ? (inv.dueDate | date:"dd/MM/yyyy") : "—" }}</td>
+          <td class="text-right">{{ inv.currency }} {{ inv.grandTotal | number:"1.2-2" }}</td>
+          <td class="text-right">{{ inv.currency }} {{ inv.totalPaid | number:"1.2-2" }}</td>
+          <td class="text-right fw7">{{ inv.currency }} {{ inv.remainingBalance | number:"1.2-2" }}</td>
+          <td class="text-center"><span class="badge" [ngClass]="statusClass(inv.status)">{{ inv.status | uppercase }}</span></td>
+          <td class="text-right">
+            <button class="icon-btn" (click)="viewInvoice(inv); $event.stopPropagation()" title="View">
+              <span class="material-symbols-outlined icon-sm">visibility</span>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="paged.length === 0">
+          <td colspan="9" class="empty-row">No invoices currently need payment.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination-bar" *ngIf="!loading && !error && filtered.length > 0">
+    <p class="pagination-info">Showing {{ (page-1)*pageSize+1 }} to {{ Math.min(page*pageSize, filtered.length) }} of {{ filtered.length }} entries</p>
+    <div class="pagination-controls">
+      <button class="page-btn" (click)="goToPage(page-1)" [disabled]="page===1">‹</button>
+      <button class="page-btn" *ngFor="let p of pageNumbers" [class.active]="page===p" (click)="goToPage(p)">{{ p }}</button>
+      <button class="page-btn" (click)="goToPage(page+1)" [disabled]="page===totalPages">›</button>
+    </div>
+  </div>
+
 </div>

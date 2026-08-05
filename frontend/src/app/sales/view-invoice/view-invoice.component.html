@@ -186,6 +186,14 @@
               <span>Grand Total</span>
               <span>৳ {{ invoice.grandTotal | number:"1.2-2" }}</span>
             </div>
+            <div class="totals-line">
+              <span>Amount Paid</span>
+              <span class="fw7">৳ {{ invoice.totalPaid | number:"1.2-2" }}</span>
+            </div>
+            <div class="totals-line">
+              <span>Remaining Balance</span>
+              <span class="fw7">৳ {{ invoice.remainingBalance | number:"1.2-2" }}</span>
+            </div>
             <p class="in-words">In words: {{ grandTotalInWords }}</p>
           </div>
         </div>
@@ -203,16 +211,122 @@
       </div>
     </div>
 
+    <!-- Payment History -->
+    <div class="payment-history-card">
+      <h4 class="field-label">
+        <span class="material-symbols-outlined icon-sm">history</span>
+        Payment History
+      </h4>
+      <div class="table-wrap" *ngIf="payments.length > 0">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Date</th><th>Amount</th><th>Method</th><th>Account</th><th>Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of payments">
+              <td>{{ p.date | date:"dd/MM/yyyy" }}</td>
+              <td class="fw7">{{ p.currency }} {{ p.amount | number:"1.2-2" }}</td>
+              <td>{{ p.paymentMethod || "—" }}</td>
+              <td>{{ p.accountTitle }}</td>
+              <td>{{ p.referenceNo || "—" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="no-payments" *ngIf="!loadingPayments && payments.length === 0">No payments recorded yet.</p>
+    </div>
+
     <!-- Help row -->
     <div class="help-row">
       <button class="help-btn">
         <span class="material-symbols-outlined icon-sm">help_outline</span>
         Need help with this invoice?
       </button>
-      <button class="help-btn">
-        <span class="material-symbols-outlined icon-sm">history</span>
-        View payment history
-      </button>
+    </div>
+
+    <!-- Add Payment Modal -->
+    <div class="modal-overlay" *ngIf="showPaymentModal" (click)="closePaymentModal()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>#{{ invoice.invoiceNumber }}</h3>
+          <button class="modal-close" (click)="closePaymentModal()" [disabled]="savingPayment">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-summary">
+            <div class="summary-item"><span>Invoice Total</span><span class="fw7">{{ invoice.currency }} {{ invoice.grandTotal | number:"1.2-2" }}</span></div>
+            <div class="summary-item"><span>Already Paid</span><span class="fw7">{{ invoice.currency }} {{ invoice.totalPaid | number:"1.2-2" }}</span></div>
+            <div class="summary-item"><span>Remaining Balance</span><span class="fw7">{{ invoice.currency }} {{ invoice.remainingBalance | number:"1.2-2" }}</span></div>
+          </div>
+
+          <p class="modal-error" *ngIf="paymentError">{{ paymentError }}</p>
+
+          <div class="field-block">
+            <label class="field-label">Account</label>
+            <select class="input" [(ngModel)]="paymentForm.accountId">
+              <option [ngValue]="null">Choose an Account</option>
+              <option *ngFor="let a of accounts" [ngValue]="a.id">{{ a.accountTitle }}</option>
+            </select>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Payment Date</label>
+            <input class="input" type="date" [(ngModel)]="paymentForm.date" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Description</label>
+            <input class="input" type="text" [(ngModel)]="paymentForm.description" />
+          </div>
+
+          <div class="grid-2">
+            <div class="field-block">
+              <label class="field-label">Amount</label>
+              <input class="input" type="number" step="0.01" min="0" [(ngModel)]="paymentForm.amount" />
+            </div>
+            <div class="field-block">
+              <label class="field-label">Currency</label>
+              <select class="input" [(ngModel)]="paymentForm.currency">
+                <option>BDT</option>
+                <option>USD</option>
+                <option>EUR</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Category</label>
+            <input class="input" type="text" [(ngModel)]="paymentForm.category" placeholder="e.g. Invoice Payment" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Payer</label>
+            <input class="input" type="text" [(ngModel)]="paymentForm.payer" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Payment Method</label>
+            <input class="input" type="text" [(ngModel)]="paymentForm.paymentMethod" placeholder="Select Payment Method" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Reference Number</label>
+            <input class="input" type="text" [(ngModel)]="paymentForm.referenceNo" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Notes</label>
+            <textarea class="input textarea" rows="2" [(ngModel)]="paymentForm.notes"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" (click)="closePaymentModal()" [disabled]="savingPayment">Cancel</button>
+          <button class="btn-primary" (click)="savePayment()" [disabled]="savingPayment">
+            {{ savingPayment ? "Saving..." : "Save Payment" }}
+          </button>
+        </div>
+      </div>
     </div>
 
   </ng-container>

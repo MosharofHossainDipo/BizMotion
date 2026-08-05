@@ -26,6 +26,8 @@ public class InvoiceDto {
     private BigDecimal           subtotal;
     private BigDecimal           taxTotal;
     private BigDecimal           grandTotal;
+    private BigDecimal           totalPaid;
+    private BigDecimal           remainingBalance;
     private String               notesToCustomer;
     private String               internalRemarks;
     private Long                 createdBy;

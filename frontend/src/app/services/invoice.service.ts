@@ -29,6 +29,8 @@ export interface InvoiceDto {
   subtotal: number;
   taxTotal: number;
   grandTotal: number;
+  totalPaid: number;
+  remainingBalance: number;
   notesToCustomer: string;
   internalRemarks: string;
   createdAt: string;

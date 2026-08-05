@@ -6,6 +6,7 @@ import com.bizmotion.rbca.entity.Invoice;
 import com.bizmotion.rbca.entity.InvoiceItem;
 import com.bizmotion.rbca.repository.CustomerRepository;
 import com.bizmotion.rbca.repository.InvoiceRepository;
+import com.bizmotion.rbca.repository.PaymentRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -34,6 +35,7 @@ public class InvoiceService {
 
     @Autowired private InvoiceRepository  repo;
     @Autowired private CustomerRepository customerRepo;
+    @Autowired private PaymentRepository  payRepo;
 
     private static final DateTimeFormatter TRACKING_DATE_FMT = DateTimeFormatter.ofPattern("yyMMdd");
 
@@ -521,12 +523,16 @@ public class InvoiceService {
                         i.getLineTotal(), i.getSortOrder()))
                 .collect(Collectors.toList());
 
+        BigDecimal totalPaid = payRepo.sumByInvoiceId(inv.getId());
+        BigDecimal remainingBalance = inv.getGrandTotal().subtract(totalPaid);
+
         return new InvoiceDto(
                 inv.getId(), inv.getInvoiceNumber(), inv.getTrackingNumber(), inv.getSubject(),
                 inv.getCustomer().getId(), inv.getCustomer().getName(),
                 inv.getBillingAddress(), inv.getStatus(), inv.getInvoiceType(), inv.getCurrency(),
                 inv.getPaymentTerms(), inv.getInvoiceDate(), inv.getDueDate(),
                 inv.getTaxPercent(), inv.getSubtotal(), inv.getTaxTotal(), inv.getGrandTotal(),
+                totalPaid, remainingBalance,
                 inv.getNotesToCustomer(), inv.getInternalRemarks(),
                 inv.getCreatedBy(), inv.getCreatedAt(), inv.getUpdatedAt(), items
         );
