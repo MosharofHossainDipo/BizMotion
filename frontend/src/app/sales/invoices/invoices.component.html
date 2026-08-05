@@ -1,0 +1,219 @@
+<div class="invoices-page">
+
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-icon">&#128220;</div>
+      <div>
+        <h1 class="header-title">Invoices</h1>
+        <p class="header-sub">Manage billing, recurring payments, and customer accounting</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary">
+        <span class="material-symbols-outlined icon-sm">analytics</span>
+        View Reports
+      </button>
+      <button class="btn-secondary" (click)="openImportModal()">
+        <span class="material-symbols-outlined icon-sm">upload</span>
+        Import Invoices
+      </button>
+      <button class="btn-primary" (click)="addInvoice()">
+        <span class="material-symbols-outlined icon-sm">add</span>
+        Add Invoice
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace">
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <div class="filter-field">
+        <label class="filter-label">Date From</label>
+        <input type="date" class="filter-input" [(ngModel)]="dateFrom" />
+      </div>
+      <div class="filter-field">
+        <label class="filter-label">Date To</label>
+        <input type="date" class="filter-input" [(ngModel)]="dateTo" />
+      </div>
+      <div class="filter-field">
+        <label class="filter-label">Customer</label>
+        <select class="filter-input" [(ngModel)]="customerId">
+          <option value="all">All Customers</option>
+          <option *ngFor="let c of customers" [ngValue]="c.id">{{ c.name }}</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label class="filter-label">Status</label>
+        <select class="filter-input" [(ngModel)]="statusFilter">
+          <option value="all">All Statuses</option>
+          <option value="Draft">Draft</option>
+          <option value="Unpaid">Unpaid</option>
+          <option value="Partially Paid">Partially Paid</option>
+          <option value="Paid">Paid</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="filter-field grow">
+        <label class="filter-label">Search</label>
+        <div class="search-wrap">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input type="text" class="filter-input search-input" placeholder="Search invoices..." [(ngModel)]="searchTerm" />
+        </div>
+      </div>
+      <button class="btn-primary apply-btn" (click)="applyFilters()">Apply Filters</button>
+    </div>
+
+    <!-- Status tabs -->
+    <div class="tab-bar">
+      <button class="tab" [class.active]="activeTab === 'all'" (click)="setTab('all')">All Invoices</button>
+      <button class="tab" [class.active]="activeTab === 'Unpaid'" (click)="setTab('Unpaid')">Unpaid</button>
+      <button class="tab" [class.active]="activeTab === 'Partially Paid'" (click)="setTab('Partially Paid')">Partially Paid</button>
+      <button class="tab" [class.active]="activeTab === 'Paid'" (click)="setTab('Paid')">Paid</button>
+      <button class="tab" [class.active]="activeTab === 'Cancelled'" (click)="setTab('Cancelled')">Cancelled</button>
+    </div>
+
+    <!-- Loading / error -->
+    <div class="state-row" *ngIf="loading">
+      <span class="spinner"></span> Loading invoices...
+    </div>
+    <div class="state-row error-row" *ngIf="!loading && error">{{ error }}</div>
+
+    <!-- Table -->
+    <div class="table-wrap" *ngIf="!loading && !error">
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th>#Invoice ID</th>
+            <th>Account</th>
+            <th>Amount</th>
+            <th class="text-center">Status</th>
+            <th>Date</th>
+            <th class="text-right">Manage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let inv of paged">
+            <td class="cell-id" (click)="viewInvoice(inv)">{{ inv.invoiceNumber }}</td>
+            <td>
+              <div class="account-cell">
+                <div class="avatar" [style.background]="avatarColor(inv.customerName).bg" [style.color]="avatarColor(inv.customerName).fg">
+                  {{ getInitials(inv.customerName) }}
+                </div>
+                <span class="account-name">{{ inv.customerName }}</span>
+              </div>
+            </td>
+            <td class="cell-amount">৳ {{ inv.grandTotal | number:"1.2-2" }}</td>
+            <td class="text-center">
+              <span class="badge" [ngClass]="statusClass(inv.status)">{{ inv.status | uppercase }}</span>
+            </td>
+            <td class="cell-date">
+              <div class="date-stack">
+                <span>Inv: {{ inv.invoiceDate | date:"dd/MM/yyyy" }}</span>
+                <span *ngIf="inv.dueDate" [class.overdue]="isOverdue(inv)">Due: {{ inv.dueDate | date:"dd/MM/yyyy" }}</span>
+              </div>
+            </td>
+            <td class="text-right">
+              <div class="manage-actions">
+                <button class="icon-btn" (click)="viewInvoice(inv)" title="View">
+                  <span class="material-symbols-outlined icon-sm">visibility</span>
+                </button>
+                <button class="icon-btn" (click)="editInvoice(inv)" title="Edit">
+                  <span class="material-symbols-outlined icon-sm">edit</span>
+                </button>
+                <button class="icon-btn" (click)="downloadInvoice(inv)" title="Download">
+                  <span class="material-symbols-outlined icon-sm">download</span>
+                </button>
+                <button class="icon-btn danger" (click)="deleteInvoice(inv)" title="Delete">
+                  <span class="material-symbols-outlined icon-sm">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="paged.length === 0">
+            <td colspan="6" class="empty-row">
+              {{ invoices.length === 0 ? "No invoices yet — click Add Invoice to create one." : "No invoices match the current filters." }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-bar" *ngIf="!loading && !error && filtered.length > 0">
+      <p class="pagination-info">
+        Showing <strong>{{ rangeStart }}</strong> to <strong>{{ rangeEnd }}</strong> of <strong>{{ filtered.length }}</strong> entries
+      </p>
+      <div class="pagination-controls">
+        <button class="page-btn" (click)="goToPage(page - 1)" [disabled]="page === 1">
+          <span class="material-symbols-outlined icon-sm">chevron_left</span>
+        </button>
+        <button class="page-btn" *ngFor="let p of pageNumbers"
+                [class.active]="page === p" (click)="goToPage(p)">
+          {{ p }}
+        </button>
+        <button class="page-btn" (click)="goToPage(page + 1)" [disabled]="page === totalPages">
+          <span class="material-symbols-outlined icon-sm">chevron_right</span>
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Import Invoices Modal -->
+  <div class="modal-overlay" *ngIf="showImportModal" (click)="closeImportModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Import Invoices</h3>
+        <button class="modal-close" (click)="closeImportModal()" [disabled]="importing">&times;</button>
+      </div>
+
+      <div class="modal-body" *ngIf="!importResult">
+        <div class="drop-zone"
+             [class.drag-over]="isDragOver"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave($event)"
+             (drop)="onDrop($event)">
+          <p class="drop-title">Drag &amp; drop your file here</p>
+          <p class="drop-sub">Excel (.xlsx, .xls) or CSV (.csv)</p>
+          <label class="browse-btn">
+            Browse File
+            <input type="file" accept=".csv,.xlsx,.xls" (change)="onFileSelected($event)" hidden />
+          </label>
+          <p class="selected-file" *ngIf="selectedFile">Selected: {{ selectedFile.name }}</p>
+        </div>
+
+        <button class="link-btn" (click)="downloadTemplate()">Download Sample Template</button>
+
+        <p class="modal-error" *ngIf="importError">{{ importError }}</p>
+      </div>
+
+      <div class="modal-body" *ngIf="importResult">
+        <div class="import-summary">
+          <p class="summary-title">Import Completed</p>
+          <div class="summary-grid">
+            <div class="summary-stat"><span class="stat-num ok">{{ importResult.imported }}</span><span class="stat-label">Imported</span></div>
+            <div class="summary-stat"><span class="stat-num warn">{{ importResult.duplicates }}</span><span class="stat-label">Duplicates</span></div>
+            <div class="summary-stat"><span class="stat-num err">{{ importResult.invalid }}</span><span class="stat-label">Invalid</span></div>
+            <div class="summary-stat"><span class="stat-num">{{ importResult.totalInvoices }}</span><span class="stat-label">Total Invoices</span></div>
+          </div>
+          <div class="error-list" *ngIf="importResult.errors.length > 0">
+            <p class="error-list-title">Details:</p>
+            <p class="error-line" *ngFor="let e of importResult.errors">{{ e }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" *ngIf="!importResult">
+        <button class="tbl-btn" (click)="closeImportModal()" [disabled]="importing">Cancel</button>
+        <button class="btn-primary" (click)="runImport()" [disabled]="importing || !selectedFile">
+          {{ importing ? "Importing..." : "Import" }}
+        </button>
+      </div>
+      <div class="modal-footer" *ngIf="importResult">
+        <button class="btn-primary" (click)="closeImportModal()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>

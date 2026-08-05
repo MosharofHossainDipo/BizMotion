@@ -1,0 +1,87 @@
+<div class="page-content">
+
+  <div class="filter-card">
+    <div class="filter-grid">
+      <div class="field-block">
+        <label class="field-label">Date From</label>
+        <input class="input" type="date" [(ngModel)]="filters.dateFrom" />
+      </div>
+      <div class="field-block">
+        <label class="field-label">Date To</label>
+        <input class="input" type="date" [(ngModel)]="filters.dateTo" />
+      </div>
+      <div class="field-block">
+        <label class="field-label">Transaction Type</label>
+        <select class="input" [(ngModel)]="filters.type">
+          <option value="all">All</option>
+          <option *ngFor="let t of lookups.types" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Account</label>
+        <select class="input" [(ngModel)]="filters.accountId">
+          <option value="all">All</option>
+          <option *ngFor="let a of accounts" [ngValue]="a.id">{{ a.accountTitle }}</option>
+        </select>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Contact</label>
+        <select class="input" [(ngModel)]="filters.contact">
+          <option value="all">All</option>
+          <option *ngFor="let c of lookups.contacts" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Category</label>
+        <select class="input" [(ngModel)]="filters.category">
+          <option value="all">All</option>
+          <option *ngFor="let c of lookups.categories" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+    </div>
+    <button class="primary-btn" (click)="load()">Filter</button>
+  </div>
+
+  <div class="table-header">
+    <div class="table-actions">
+      <button class="tbl-btn" (click)="exportCsv()">CSV</button>
+    </div>
+  </div>
+
+  <div class="error-banner" *ngIf="error">{{ error }}</div>
+  <div class="loading-inner" *ngIf="loading"><div class="spinner"></div><span>Loading transactions...</span></div>
+
+  <div class="table-card" *ngIf="!loading && !error">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>ID</th><th>Date</th><th>Account</th><th>Type</th><th>Description</th>
+          <th class="text-right">Dr. (BDT)</th><th class="text-right">Cr. (BDT)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of paged">
+          <td class="mono">{{ t.transactionId }}</td>
+          <td>{{ t.date | date:"dd/MM/yyyy" }}</td>
+          <td>{{ t.accountTitle }}</td>
+          <td><span class="type-badge" [ngClass]="'type-' + t.type.toLowerCase().replaceAll(' ','-')">{{ t.type }}</span></td>
+          <td>{{ t.description }}</td>
+          <td class="text-right">{{ t.debit > 0 ? (t.debit | number:"1.2-2") : "-" }}</td>
+          <td class="text-right">{{ t.credit > 0 ? (t.credit | number:"1.2-2") : "-" }}</td>
+        </tr>
+        <tr *ngIf="paged.length === 0">
+          <td colspan="7" class="empty-row">No transactions match the current filters.</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="table-footer" *ngIf="transactions.length > 0">
+      <span>Showing {{ (page-1)*pageSize+1 }} to {{ Math.min(page*pageSize, transactions.length) }} of {{ transactions.length }} entries</span>
+      <div class="pagination-controls">
+        <button class="page-btn" (click)="goToPage(page-1)" [disabled]="page===1">‹</button>
+        <span class="page-current">{{ page }} / {{ totalPages }}</span>
+        <button class="page-btn" (click)="goToPage(page+1)" [disabled]="page===totalPages">›</button>
+      </div>
+    </div>
+  </div>
+
+</div>

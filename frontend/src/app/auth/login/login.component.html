@@ -1,0 +1,112 @@
+<div class="login-wrapper">
+  <div class="brand-header animate-fade-in">
+    <img src="logo.png" alt="BizMotion Logo" class="brand-logo" />
+    <h1 class="brand-title">BIZMOTION LIMITED</h1>
+  </div>
+
+  <div class="form-panel animate-scale-up">
+    <div class="form-container">
+      <h2 class="form-title">Welcome Back</h2>
+      <p class="form-subtitle">Please sign in to access your accounting dashboard.</p>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+
+        <div class="field-group">
+          <label class="field-label">Username or Email Address</label>
+          <input
+            type="text"
+            formControlName="username"
+            placeholder="e.g. sazzad.hossain"
+            class="field-input"
+            [class.error]="f['username'].invalid && f['username'].touched">
+
+          <div class="error-wrapper">
+            <span class="field-error" *ngIf="f['username'].invalid && f['username'].touched">
+              Username is required
+            </span>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="password-label-wrapper">
+            <label class="field-label">Password</label>
+            <a routerLink="/forgot-password" class="forgot-password-link">Forgot password?</a>
+          </div>
+
+          <div class="password-input-wrapper">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="***********"
+              class="field-input password-field"
+              [class.error]="f['password'].invalid && f['password'].touched">
+
+            <button type="button" class="password-toggle-btn" (click)="togglePasswordVisibility()">
+              <svg *ngIf="!showPassword" class="eye-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <svg *ngIf="showPassword" class="eye-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.025 10.025 0 014.132-5.4M9.9 4.24a9.124 9.124 0 012.1-.24c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.4M9.9 9.9a3 3 0 114.2 4.2m-4.2-4.2l4.2 4.2" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="error-wrapper">
+            <span class="field-error" *ngIf="f['password'].invalid && f['password'].touched">
+              Password is required
+            </span>
+          </div>
+        </div>
+
+        <div class="remember-me-group">
+          <label class="checkbox-container">
+            <input type="checkbox" formControlName="rememberMe">
+            <span class="checkmark"></span>
+            <span class="checkbox-text">Remember this device</span>
+          </label>
+        </div>
+
+        <div class="server-error" *ngIf="serverError">
+          <svg class="error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>{{ serverError }}</span>
+        </div>
+
+        <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || loading">
+          <span class="btn-content">
+            <span>{{ loading ? 'Signing in...' : 'Sign In' }}</span>
+            <svg class="arrow-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </span>
+        </button>
+
+        <p class="form-link">
+          Don't have an account? <a routerLink="/register" class="register-link">Register here</a>
+        </p>
+
+      </form>
+    </div>
+
+    <div class="footer-compliance animate-fade-in">
+      <div class="badge-row">
+        <span class="compliance-badge">
+          <svg class="badge-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          SSL ENCRYPTED
+        </span>
+        <span class="compliance-badge">
+          <svg class="badge-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          GDPR READY
+        </span>
+      </div>
+      <p class="meta-footer-text">Vers. 1.0.0 &copy; 2026 BIZMOTION LIMITED
+    </div>
+  </div>
+</div>

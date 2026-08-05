@@ -1,0 +1,154 @@
+<div class="xfer-page">
+
+  <!-- Page head -->
+  <div class="page-head">
+    <nav class="breadcrumb">
+      <a href="javascript:void(0)">Dashboard</a>
+      <span class="material-symbols-outlined crumb-chevron">chevron_right</span>
+      <span class="crumb-current">New Transfer</span>
+    </nav>
+    <h2 class="page-title">New Transfer</h2>
+    <p class="page-sub">Move funds between your accounts.</p>
+  </div>
+
+  <p class="server-error" *ngIf="serverError">{{ serverError }}</p>
+
+  <!-- Top filter bar: From / To / Date / Description -->
+  <div class="glass-panel filter-bar">
+    <div class="filter-field">
+      <label class="field-label">From</label>
+      <div class="select-wrap">
+        <select class="input" [(ngModel)]="form.fromAccountId" [disabled]="loadingAccounts">
+          <option [ngValue]="null">{{ loadingAccounts ? "Loading accounts..." : "Choose an Account" }}</option>
+          <option *ngFor="let a of accounts" [ngValue]="a.id">{{ a.accountTitle }}</option>
+        </select>
+        <span class="material-symbols-outlined select-chevron">expand_more</span>
+      </div>
+    </div>
+
+    <div class="filter-field">
+      <label class="field-label">To</label>
+      <div class="select-wrap">
+        <select class="input" [(ngModel)]="form.toAccountId" [disabled]="loadingAccounts">
+          <option [ngValue]="null">{{ loadingAccounts ? "Loading accounts..." : "Choose an Account" }}</option>
+          <option *ngFor="let a of accounts" [ngValue]="a.id">{{ a.accountTitle }}</option>
+        </select>
+        <span class="material-symbols-outlined select-chevron">expand_more</span>
+      </div>
+    </div>
+
+    <div class="filter-field">
+      <label class="field-label">Date</label>
+      <div class="date-wrap">
+        <span class="material-symbols-outlined date-icon">calendar_today</span>
+        <input class="input date-input" type="date" [(ngModel)]="form.date" />
+      </div>
+    </div>
+
+    <div class="filter-field">
+      <label class="field-label">Description</label>
+      <input class="input" type="text" placeholder="Short note about this transfer" [(ngModel)]="form.description" />
+    </div>
+  </div>
+
+  <!-- Main form card -->
+  <div class="glass-panel form-card">
+    <div class="form-grid">
+
+      <div class="field-block">
+        <label class="field-label">Amount</label>
+        <div class="amount-wrap">
+          <span class="amount-prefix">$</span>
+          <input class="input amount-input" type="number" step="0.01" min="0" placeholder="0.00" [(ngModel)]="form.amount" />
+        </div>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Currency</label>
+        <div class="select-wrap">
+          <select class="input" [(ngModel)]="form.currency">
+            <option>BDT</option>
+            <option>USD</option>
+            <option>EUR</option>
+          </select>
+          <span class="material-symbols-outlined select-chevron">expand_more</span>
+        </div>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Tags</label>
+        <input class="input" type="text" [(ngModel)]="form.tags" placeholder="comma, separated, tags" />
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Payment Method</label>
+        <app-combo-input [(ngModel)]="form.paymentMethod" [options]="paymentMethods" placeholder="Select Payment Method"></app-combo-input>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Ref</label>
+        <input class="input" type="text" [(ngModel)]="form.referenceNo" placeholder="e.g. Transaction ID, Check No." />
+      </div>
+
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-create" (click)="save()" [disabled]="saving">
+        <span class="material-symbols-outlined icon-sm" *ngIf="!saving">add_circle</span>
+        <span class="material-symbols-outlined icon-sm spin" *ngIf="saving">sync</span>
+        {{ saving ? "Saving..." : "Create Transfer Entry" }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Recent Transfers -->
+  <div class="glass-panel activity-card">
+    <div class="activity-head">
+      <h3 class="activity-title">Recent Transfers</h3>
+      <a class="view-all-link" href="javascript:void(0)">
+        View All History
+        <span class="material-symbols-outlined icon-xs">arrow_forward</span>
+      </a>
+    </div>
+
+    <div class="loading-inner" *ngIf="loadingTransfers"><div class="spinner"></div><span>Loading transfers...</span></div>
+    <p class="list-error" *ngIf="!loadingTransfers && listError">{{ listError }}</p>
+
+    <div class="table-wrap" *ngIf="!loadingTransfers && !listError">
+      <table class="xfer-table">
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Description</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of transfers">
+            <td>
+              <div class="account-cell">
+                <div class="avatar">{{ (t.fromAccountTitle || "?").slice(0, 2).toUpperCase() }}</div>
+                <div class="xfer-route">
+                  <span class="route-title">{{ t.fromAccountTitle }}</span>
+                  <span class="material-symbols-outlined route-arrow">arrow_forward</span>
+                  <span class="route-title">{{ t.toAccountTitle }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="xfer-desc-main" *ngIf="t.description">{{ t.description }}</div>
+              <span class="xfer-code">{{ t.transferCode }}</span>
+            </td>
+            <td class="text-right">
+              <div class="amount-cell">{{ t.currency }} {{ t.amount | number:"1.2-2" }}</div>
+            </td>
+          </tr>
+          <tr *ngIf="transfers.length === 0">
+            <td colspan="3" class="empty-row">No transfers recorded yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

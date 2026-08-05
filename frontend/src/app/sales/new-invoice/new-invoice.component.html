@@ -1,0 +1,228 @@
+<div class="invoice-page">
+
+  <header class="topbar">
+    <h2 class="topbar-title">{{ editMode ? "Edit Invoice" : "New Invoice" }}</h2>
+    <div class="topbar-actions">
+      <button class="btn-secondary" (click)="saveDraft()" [disabled]="saving">
+        {{ saving ? "Saving..." : "Save" }}
+      </button>
+      <button class="btn-primary" (click)="finalizeAndSend()" [disabled]="saving">
+        <span>Save &amp; Close</span>
+        <span class="material-symbols-outlined icon-sm">send</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="page-canvas">
+
+    <div class="section-head">
+      <h3 class="section-title">Invoice Details</h3>
+    </div>
+
+    <p class="server-error" *ngIf="serverError">{{ serverError }}</p>
+
+    <div class="glass-card">
+
+      <!-- Primary fields -->
+      <div class="grid-12 gap-lg">
+
+        <!-- Column 1: Subject, Customer & Address -->
+        <div class="col-span-6">
+          <div class="field-block">
+            <label class="field-label">Subject / Reference</label>
+            <input class="input" type="text" placeholder="e.g. SFA Monthly Bill for February 2026 (PO No-4600000483)" [(ngModel)]="invoice.subject" />
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Customer</label>
+            <div class="select-wrap">
+              <select class="input" [(ngModel)]="invoice.customerId" (ngModelChange)="onCustomerChange()" [disabled]="loadingCustomers">
+                <option [ngValue]="null">
+                  {{ loadingCustomers ? "Loading customers..." : (customers.length === 0 ? "No customers found" : "Select Contact...") }}
+                </option>
+                <option *ngFor="let c of customers" [ngValue]="c.id">{{ c.name }}</option>
+              </select>
+              <span class="material-symbols-outlined select-chevron">unfold_more</span>
+            </div>
+            <p class="field-error" *ngIf="customersError">{{ customersError }}</p>
+            <button class="link-btn" (click)="addNewCustomer()">
+              <span class="material-symbols-outlined icon-sm">add_circle</span>
+              Add New Customer
+            </button>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">Address</label>
+            <textarea class="input textarea" rows="4" placeholder="Billing Address..." [(ngModel)]="invoice.address"></textarea>
+          </div>
+        </div>
+
+        <!-- Column 2: Status / Currency / Tax / Prefix / Invoice# / Date / Terms -->
+        <div class="col-span-6">
+          <div class="grid-2 gap-lg">
+            <div class="stack">
+              <div class="field-block">
+                <label class="field-label">Status</label>
+                <select class="input" [(ngModel)]="invoice.status">
+                  <option>Draft</option>
+                  <option>Published</option>
+                  <option>Paid</option>
+                </select>
+              </div>
+              <div class="field-block">
+                <label class="field-label">Currency</label>
+                <select class="input" [(ngModel)]="invoice.currency">
+                  <option>BDT</option>
+                  <option>USD</option>
+                  <option>EUR</option>
+                </select>
+              </div>
+              <div class="field-block">
+                <label class="field-label">Tax</label>
+                <select class="input" [(ngModel)]="invoice.taxPercent">
+                  <option [ngValue]="0">None</option>
+                  <option [ngValue]="5">5%</option>
+                  <option [ngValue]="15">15%</option>
+                </select>
+              </div>
+            </div>
+            <div class="stack">
+              <div class="grid-2 gap-md">
+                <div class="field-block">
+                  <label class="field-label">Prefix</label>
+                  <input class="input" type="text" [(ngModel)]="invoice.prefix" />
+                </div>
+                <div class="field-block">
+                  <label class="field-label">Invoice #</label>
+                  <input class="input" type="text" [(ngModel)]="invoice.number" />
+                </div>
+              </div>
+              <div class="field-block">
+                <label class="field-label">Invoice Date</label>
+                <input class="input" type="date" [(ngModel)]="invoice.date" />
+              </div>
+              <div class="field-block">
+                <label class="field-label">Payment Terms</label>
+                <select class="input" [(ngModel)]="invoice.paymentTerms">
+                  <option>Due On Receipt</option>
+                  <option>Net 15</option>
+                  <option>Net 30</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Line items -->
+      <div class="items-block">
+        <div class="items-table-wrap">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th class="col-desc">Item Name &amp; Description</th>
+                <th class="col-qty">Qty</th>
+                <th class="col-price">Price</th>
+                <th class="col-total text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of lineItems">
+                <td class="col-desc">
+                  <div class="desc-cell">
+                    <div class="mini-toolbar">
+                      <span class="material-symbols-outlined icon-sm">format_bold</span>
+                      <span class="material-symbols-outlined icon-sm">format_italic</span>
+                      <span class="material-symbols-outlined icon-sm">link</span>
+                      <span class="toolbar-divider"></span>
+                      <span class="material-symbols-outlined icon-sm">format_list_bulleted</span>
+                    </div>
+                    <textarea class="desc-input" rows="2" placeholder="Describe the item or service..." [(ngModel)]="item.description"></textarea>
+                  </div>
+                </td>
+                <td class="col-qty">
+                  <input class="cell-input" type="number" min="0" [(ngModel)]="item.qty" />
+                </td>
+                <td class="col-price">
+                  <div class="price-cell">
+                    <span class="currency-sign">৳</span>
+                    <input class="cell-input text-right" type="number" min="0" [(ngModel)]="item.price" />
+                  </div>
+                </td>
+                <td class="col-total text-right">
+                  <span class="total-value">{{ lineTotal(item) | number:"1.2-2" }}</span>
+                  <button class="rm-btn" (click)="removeItem(item.id)" *ngIf="lineItems.length > 1">&#10005;</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="items-actions">
+          <button class="btn-ghost" (click)="addBlankLine()">
+            <span class="material-symbols-outlined icon-sm">add</span>
+            Add Blank Line
+          </button>
+          <button class="btn-primary" (click)="addProductOrService()">
+            <span class="material-symbols-outlined icon-sm">search</span>
+            Add Product OR Service
+          </button>
+        </div>
+      </div>
+
+      <!-- Footer: notes + summary -->
+      <div class="footer-grid">
+        <div class="notes-col">
+          <div class="field-block">
+            <label class="field-label">Notes to Customer</label>
+            <textarea class="input textarea" rows="3" placeholder="Thank you for your business!" [(ngModel)]="notesToCustomer"></textarea>
+          </div>
+          <div class="field-block">
+            <label class="field-label">Internal Remarks</label>
+            <textarea class="input textarea" rows="2" placeholder="Confidential admin notes..." [(ngModel)]="internalRemarks"></textarea>
+          </div>
+        </div>
+
+        <div class="summary-col">
+          <div class="summary-card">
+            <div class="summary-row">
+              <span>Sub Total</span>
+              <span class="fw7">{{ subtotal | number:"1.2-2" }} {{ invoice.currency }}</span>
+            </div>
+            <div class="summary-row summary-row-border">
+              <span>Tax ({{ invoice.taxPercent }}%)</span>
+              <span class="fw7">{{ taxTotal | number:"1.2-2" }} {{ invoice.currency }}</span>
+            </div>
+            <div class="summary-row grand-row">
+              <div class="grand-label">
+                <span class="grand-eyebrow">Grand Total</span>
+                <span class="grand-hint">Inclusive of tax</span>
+              </div>
+              <div class="grand-amount">
+                <span class="grand-value">{{ grandTotal | number:"1.2-2" }}</span>
+                <span class="grand-currency">{{ invoice.currency }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="notice-card">
+            <span class="material-symbols-outlined notice-icon">verified</span>
+            <p class="notice-text">Total amount will be converted based on market rate at time of payment.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Mobile floating actions -->
+  <div class="mobile-fab">
+    <button class="fab fab-save" (click)="saveDraft()" [disabled]="saving">
+      <span class="material-symbols-outlined">save</span>
+    </button>
+    <button class="fab fab-send" (click)="finalizeAndSend()" [disabled]="saving">
+      <span class="material-symbols-outlined">send</span>
+    </button>
+  </div>
+
+</div>

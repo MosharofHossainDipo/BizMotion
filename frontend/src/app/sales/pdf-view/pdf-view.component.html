@@ -1,0 +1,176 @@
+<!-- Loading / error (screen only, never printed) -->
+<div class="state-row no-print" *ngIf="loading">
+  <span class="spinner"></span> Loading invoice...
+</div>
+<div class="state-row error-row no-print" *ngIf="!loading && error">{{ error }}</div>
+
+<ng-container *ngIf="!loading && !error && invoice">
+
+  <!-- Top app bar (screen only) -->
+  <header class="topbar no-print">
+    <span class="brand">{{ company.name }}</span>
+    <div class="topbar-actions">
+      <label class="btn-outline sig-upload-btn">
+        <span class="material-symbols-outlined icon-sm">draw</span>
+        {{ authorizedSignatureUrl ? "Change Signature" : "Attach Digital Signature" }}
+        <input type="file" accept="image/*" (change)="onSignatureFileSelected($event)" hidden />
+      </label>
+      <button class="btn-outline" *ngIf="authorizedSignatureUrl" (click)="removeSignature()">
+        <span class="material-symbols-outlined icon-sm">close</span>
+        Remove
+      </button>
+      <button class="btn-secondary" (click)="printLetterhead()" [disabled]="generating" title="Prints without logo/footer, for pre-printed letterhead paper">
+        <span class="material-symbols-outlined icon-sm">print</span>
+        {{ generating ? "Preparing..." : "Print (Letterhead)" }}
+      </button>
+      <button class="btn-secondary" (click)="printPdf()" [disabled]="generating">
+        <span class="material-symbols-outlined icon-sm">print</span>
+        {{ generating ? "Preparing..." : "Print" }}
+      </button>
+      <button class="btn-primary" (click)="downloadPdf()" [disabled]="generating">
+        <span class="material-symbols-outlined icon-sm">download</span>
+        {{ generating ? "Generating..." : "Download PDF" }}
+      </button>
+    </div>
+  </header>
+
+  <main class="page-main">
+
+    <!-- ===== The actual printable sheet ===== -->
+    <div class="pdf-sheet" #sheetRef [class.letterhead-mode]="letterheadMode">
+
+      <!-- Header — appears once, only on page 1. Hidden in letterhead mode. -->
+      <div class="pdf-header">
+        <p class="tracking-line">Tracking No: {{ invoice.trackingNumber || "—" }}</p>
+        <div class="brand-row">
+          <img [src]="company.logoUrl" alt="{{ company.name }} Logo" class="logo.png" />
+          <p class="company-name">{{ company.name }}</p>
+        </div>
+        <div class="header-rule"></div>
+      </div>
+
+      <!-- Subject + Bill To + Info table -->
+      <div class="meta-grid">
+        <div class="meta-left">
+          <h1 class="subject-title" *ngIf="invoice.subject">{{ invoice.subject }}</h1>
+          <p class="field-label">Invoiced To</p>
+          <p class="bill-name">{{ invoice.customerName }}</p>
+          <p class="bill-address" *ngIf="billToAddress">{{ billToAddress }}</p>
+        </div>
+
+        <div class="meta-right">
+          <table class="info-table">
+            <tbody>
+              <tr>
+                <td class="info-label">Invoice</td>
+                <td class="info-value">{{ invoice.invoiceNumber }}</td>
+              </tr>
+              <tr>
+                <td class="info-label">Status</td>
+                <td class="info-value"><span class="status-chip" [ngClass]="'status-' + statusLower">{{ invoice.status }}</span></td>
+              </tr>
+              <tr>
+                <td class="info-label">Invoice Date</td>
+                <td class="info-value">{{ formatDate(invoice.invoiceDate) }}</td>
+              </tr>
+              <tr>
+                <td class="info-label">Due Date</td>
+                <td class="info-value">{{ formatDate(invoice.dueDate) }}</td>
+              </tr>
+              <tr>
+                <td class="info-label">Amount Due</td>
+                <td class="info-value fw7">{{ formatMoney(invoice.grandTotal) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Items + summary — one continuous bordered table -->
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th class="col-item">Item</th>
+            <th class="col-price text-right">Price</th>
+            <th class="col-qty text-center">Qty</th>
+            <th class="col-total text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of invoice.items">
+            <td class="col-item">{{ item.description || "Line item" }}</td>
+            <td class="text-right">{{ formatMoney(item.unitPrice) }}</td>
+            <td class="text-center">{{ item.qty | number:"1.2-2" }}</td>
+            <td class="text-right">{{ formatMoney(item.lineTotal) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Tax / Sub Total / Grand Total — deliberately built with plain
+           <div> rows instead of <table><tr> rows. Chrome's print engine
+           does not reliably honor page-break-inside:avoid on <tbody> or
+           table row-groups (a long-standing Chromium limitation), which is
+           what caused Grand Total to silently disappear before. Plain
+           block elements respect page-break-inside:avoid correctly, so
+           this whole group now moves to the next page as one unit
+           whenever it doesn't fit, instead of losing rows. -->
+      <div class="totals-block">
+        <div class="totals-row" *ngIf="invoice.taxPercent > 0">
+          <div class="totals-cell col-item">Tax ({{ invoice.taxPercent }}%)</div>
+          <div class="totals-cell col-price text-right">{{ formatMoney(invoice.taxTotal) }}</div>
+          <div class="totals-cell col-qty text-center">1.00</div>
+          <div class="totals-cell col-total text-right fw7">{{ formatMoney(invoice.taxTotal) }}</div>
+        </div>
+        <div class="totals-row summary-row">
+          <div class="totals-cell summary-label">Sub Total</div>
+          <div class="totals-cell summary-value">{{ formatMoney(invoice.subtotal) }}</div>
+        </div>
+        <div class="totals-row summary-row grand">
+          <div class="totals-cell summary-label">Grand Total</div>
+          <div class="totals-cell summary-value">{{ formatMoney(invoice.grandTotal) }}</div>
+        </div>
+      </div>
+
+      <!-- Zero-height marker: everything above this point is what
+           recalcSignatureSpacer() measures as "content before the
+           signature block", used to work out which page the block would
+           naturally start on. -->
+      <div #preSignatureMarker class="pre-signature-marker no-print-visual"></div>
+
+      <!-- Dynamic spacer — height is computed in TS so the block below
+           lands flush with the bottom of whichever PRINTED page it's on.
+           Bound as a CSS variable (not a direct inline height) so it only
+           takes effect under @media print in the CSS file below — on the
+           normal screen tab there's no real "page 2" to align to, so the
+           spacer stays at 0 there and never shows as a stray blank gap. -->
+      <div class="page-spacer" [style.--spacer-h.px]="spacerHeightPx"></div>
+
+      <!-- Payment info + signatures — pinned to the bottom of whichever page it lands on -->
+      <div class="bottom-block" #bottomBlockRef>
+        <p class="payment-line">
+          Payment to: Current A/C Number: 1507 2033 1680 7001; (Account Name: BIZ MOTION LIMITED) BRAC Bank Limited
+        </p>
+
+        <div class="signature-row">
+          <div class="signature-box">
+            <img *ngIf="authorizedSignatureUrl" [src]="authorizedSignatureUrl" alt="Authorized signature" class="signature-img" />
+            <div class="signature-line"></div>
+            <p class="signature-label">Authorized Signature and Seal</p>
+          </div>
+          <div class="signature-box">
+            <div class="signature-line"></div>
+            <p class="signature-label">Client Signature and Seal</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer — repeats on every printed page via position:fixed in print CSS. Hidden in letterhead mode. -->
+      <footer class="pdf-footer">
+        <p class="footer-address">{{ company.footerAddress }}</p>
+        <p class="footer-contact">Email: {{ company.footerEmail }}, web: {{ company.footerWeb }}</p>
+      </footer>
+
+    </div>
+  </main>
+
+</ng-container>

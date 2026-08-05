@@ -1,0 +1,219 @@
+<div class="view-invoice-page">
+
+  <!-- Loading / error -->
+  <div class="state-row" *ngIf="loading">
+    <span class="spinner"></span> Loading invoice...
+  </div>
+  <div class="state-row error-row" *ngIf="!loading && error">
+    {{ error }}
+    <button class="link-btn" (click)="backToList()">Back to Invoices</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !error && invoice">
+
+    <!-- Breadcrumb + actions -->
+    <div class="top-bar">
+      <div>
+        <nav class="breadcrumb">
+          <a (click)="backToList()">Sales</a>
+          <span class="sep">/</span>
+          <a (click)="backToList()">Invoices</a>
+        </nav>
+        <h2 class="page-title">Invoice #{{ invoice.invoiceNumber }}</h2>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" (click)="excelView()">
+          <span class="material-symbols-outlined icon-sm">table_view</span>
+          Excel View
+        </button>
+
+        <div class="status-dropdown">
+          <button class="btn-outline" (click)="toggleStatusMenu()" [disabled]="updatingStatus">
+            {{ updatingStatus ? "Updating..." : "Mark As" }}
+            <span class="material-symbols-outlined icon-sm">expand_more</span>
+          </button>
+          <div class="status-menu" *ngIf="showStatusMenu">
+            <button *ngFor="let s of statusOptions" (click)="markAs(s)" [class.danger]="s === 'Cancelled'">{{ s }}</button>
+          </div>
+        </div>
+
+        <button class="btn-primary" (click)="addPayment()">
+          <span class="material-symbols-outlined icon-sm">payments</span>
+          Add Payment
+        </button>
+
+        <button class="btn-outline" (click)="cloneInvoice()" [disabled]="cloning">
+          <span class="material-symbols-outlined icon-sm">content_copy</span>
+          {{ cloning ? "Cloning..." : "Clone Invoice" }}
+        </button>
+
+        
+
+        <div class="icon-group">
+          <button class="icon-only" title="Preview" (click)="print()">
+            <span class="material-symbols-outlined icon-sm">visibility</span>
+          </button>
+          <button class="icon-only" title="Edit" (click)="editInvoice()">
+            <span class="material-symbols-outlined icon-sm">edit</span>
+          </button>
+          <button class="icon-only" title="Download PDF" (click)="downloadPdf()">
+            <span class="material-symbols-outlined icon-sm">picture_as_pdf</span>
+          </button>
+          <button class="icon-only" title="Print" (click)="print()">
+            <span class="material-symbols-outlined icon-sm">print</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice card -->
+    <div class="invoice-card">
+      <div class="card-accent"></div>
+
+      <div class="card-body">
+
+        <!-- Branding + status -->
+        <div class="brand-row">
+          <div class="brand-left">
+            <span class="status-pill" [ngClass]="statusPillClass()">
+              <span class="material-symbols-outlined icon-sm">error</span>
+              {{ invoice.status }}
+            </span>
+            <div>
+              <p class="invoice-eyebrow">INVOICE</p>
+              <p class="invoice-number">#{{ invoice.invoiceNumber }}</p>
+            </div>
+            <div class="billing-month">
+              <p class="field-label">Bill For The Month of:</p>
+              <p class="field-value">{{ billingMonth }}</p>
+            </div>
+          </div>
+
+          <div class="brand-right">
+            <div class="company-logo">BIZ<span>MOTION</span></div>
+            <div class="company-info">
+              <p class="company-name">{{ company.name }}</p>
+              <p>{{ company.addressLine1 }}</p>
+              <p>{{ company.addressLine2 }}</p>
+              <p>Phone: {{ company.phone }}</p>
+              <p>Email: {{ company.email }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info grid -->
+        <div class="info-grid">
+          <div>
+            <h4 class="field-label">Invoiced To:</h4>
+            <p class="customer-name">{{ invoice.customerName }}</p>
+            <p class="customer-line" *ngIf="invoice.billingAddress || customer?.address">
+              {{ invoice.billingAddress || customer?.address }}
+            </p>
+            <div class="contact-lines" *ngIf="customer">
+              <p *ngIf="customer.phone"><span class="material-symbols-outlined icon-xs">call</span> {{ customer.phone }}</p>
+              <p *ngIf="customer.email"><span class="material-symbols-outlined icon-xs">mail</span> {{ customer.email }}</p>
+            </div>
+          </div>
+
+          <div class="info-center">
+            <h4 class="field-label">Invoice Date:</h4>
+            <p class="field-value">{{ invoice.invoiceDate | date:"dd/MM/yyyy" }}</p>
+          </div>
+
+          <div class="info-right">
+            <h4 class="field-label">Due Date:</h4>
+            <p class="field-value" [class.overdue]="isOverdue">{{ invoice.dueDate ? (invoice.dueDate | date:"dd/MM/yyyy") : "—" }}</p>
+            <p class="terms-note" *ngIf="invoice.paymentTerms">Terms: {{ invoice.paymentTerms }}</p>
+          </div>
+        </div>
+
+        <!-- Items table -->
+        <div class="table-wrap">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th>Item / Description</th>
+                <th class="text-right">Price (৳)</th>
+                <th class="text-center">Qty</th>
+                <th class="text-right">Total (৳)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of invoice.items; let i = index">
+                <td class="col-num">{{ (i + 1).toString().padStart(2, '0') }}</td>
+                <td class="col-desc">
+                  <p class="item-name">{{ item.description || "Line item" }}</p>
+                </td>
+                <td class="text-right">{{ item.unitPrice | number:"1.2-2" }}</td>
+                <td class="text-center">{{ item.qty }}</td>
+                <td class="text-right fw7">{{ item.lineTotal | number:"1.2-2" }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Financial summary -->
+        <div class="summary-row">
+          <div class="payment-info-card">
+            <h4 class="field-label">
+              <span class="material-symbols-outlined icon-sm">account_balance</span>
+              Payment Information
+            </h4>
+            <div class="payment-lines">
+              <p><span class="fw7">Account Number:</span> {{ bank.accountNumber }}</p>
+              <p><span class="fw7">Account Name:</span> {{ bank.accountName }}</p>
+              <p><span class="fw7">Bank:</span> {{ bank.bankName }}</p>
+              <p><span class="fw7">SWIFT:</span> {{ bank.swift }}</p>
+            </div>
+            <div class="payment-note">
+              Note: Please include the invoice number as reference when making a bank transfer.
+            </div>
+          </div>
+
+          <div class="totals-col">
+            <div class="totals-line">
+              <span>Subtotal</span>
+              <span class="fw7">৳ {{ invoice.subtotal | number:"1.2-2" }}</span>
+            </div>
+            <div class="totals-line">
+              <span>Tax ({{ invoice.taxPercent }}%)</span>
+              <span class="fw7">৳ {{ invoice.taxTotal | number:"1.2-2" }}</span>
+            </div>
+            <div class="totals-divider"></div>
+            <div class="totals-line grand">
+              <span>Grand Total</span>
+              <span>৳ {{ invoice.grandTotal | number:"1.2-2" }}</span>
+            </div>
+            <p class="in-words">In words: {{ grandTotalInWords }}</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <p class="footer-caption">Generated on {{ invoice.createdAt | date:"MMM d, y" }} | Motion Digital Invoice System v2.0</p>
+        <div class="footer-links">
+          <a>Terms of Service</a>
+          <a>Privacy Policy</a>
+          <a>Contact Support</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help row -->
+    <div class="help-row">
+      <button class="help-btn">
+        <span class="material-symbols-outlined icon-sm">help_outline</span>
+        Need help with this invoice?
+      </button>
+      <button class="help-btn">
+        <span class="material-symbols-outlined icon-sm">history</span>
+        View payment history
+      </button>
+    </div>
+
+  </ng-container>
+</div>

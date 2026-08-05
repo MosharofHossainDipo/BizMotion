@@ -1,0 +1,270 @@
+<div class="settings-page">
+
+  <!-- Scope Assignment Modal -->
+  <div class="modal-overlay" *ngIf="showAssignScope" (click)="showAssignScope=false">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Assign Scopes: {{ selectedRoleForScope?.roleName }}</h3>
+        <button class="modal-close" (click)="showAssignScope=false">x</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-sub">Select permissions for this role. Changes are saved to the database immediately.</p>
+        <div class="scope-categories" *ngFor="let cat of getScopesByCategory()">
+          <p class="cat-label">{{ cat.category }}</p>
+          <div class="scope-grid">
+            <label class="scope-check" *ngFor="let s of cat.scopes">
+              <input type="checkbox" [checked]="isScopeSelected(s.id)" (change)="toggleScopeSelection(s.id)" />
+              <span class="scope-name">{{ s.name }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="sel-count">{{ selectedScopeIds.length }} scope(s) selected</span>
+        <div class="modal-btns">
+          <button class="cancel-btn" (click)="showAssignScope=false">Cancel</button>
+          <button class="primary-btn" (click)="saveAssignScope()">
+            {{ assigningScope ? "Saving..." : "Save Scopes" }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="settings-sidebar">
+    <div class="sidebar-profile">
+      <div class="avatar-sm">{{ userInitials }}</div>
+      <div class="profile-text">
+        <p class="profile-name-sm">{{ currentUsername }}</p>
+        <p class="profile-role-sm">{{ currentRole }}</p>
+      </div>
+    </div>
+    <nav class="sidebar-tabs">
+      <a class="tab-link" [class.active]="activeTab==='account'" (click)="activeTab='account'">Account</a>
+      <a class="tab-link" *ngIf="scopeSvc.canSeeUserManagement()" [class.active]="activeTab==='users'" (click)="activeTab='users'">User Management</a>
+      <a class="tab-link" *ngIf="scopeSvc.canSeeScopesTab()" [class.active]="activeTab==='scopes'" (click)="activeTab='scopes'">Scopes and Roles</a>
+      <a class="tab-link" *ngIf="scopeSvc.isSuperAdmin()" [class.active]="activeTab==='roles'" (click)="activeTab='roles'">Role Management</a>
+    </nav>
+    <button class="back-btn" (click)="goBack()">Back to Dashboard</button>
+  </aside>
+
+  <main class="settings-main">
+
+    <!-- ACCOUNT -->
+    <section *ngIf="activeTab==='account'" class="panel">
+      <h1 class="panel-title">Account</h1>
+      <p class="panel-subtitle">Update your personal information.</p>
+      <div class="card">
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Full Name</label>
+            <input type="text" class="field-input" [(ngModel)]="accountForm.fullName" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Email Address</label>
+            <input type="email" class="field-input" [(ngModel)]="accountForm.email" />
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="link-btn">Change Password</button>
+          <button class="primary-btn" (click)="saveAccount()">{{ savingAccount ? "Saving..." : "Save Changes" }}</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- USER MANAGEMENT -->
+    <section *ngIf="activeTab==='users' && scopeSvc.canSeeUserManagement()" class="panel">
+      <h1 class="panel-title">User Management</h1>
+      <p class="panel-subtitle">Control roles and access for every registered user.</p>
+      <div *ngIf="loadingUsers" class="loading-text">Loading users...</div>
+      <div *ngIf="userError" class="error-banner">{{ userError }}</div>
+      <div class="card no-pad" *ngIf="!loadingUsers && !userError">
+        <table class="user-table">
+          <thead>
+            <tr><th>USER</th><th>EMAIL</th><th>ROLE</th><th>STATUS</th><th class="text-right">ACTIONS</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of users">
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar">{{ getInitials(u.username) }}</div>
+                  <span class="user-name">{{ u.username }}</span>
+                </div>
+              </td>
+              <td class="muted">{{ u.email }}</td>
+              <td>
+                <ng-container *ngIf="scopeSvc.canManageUsers(); else roleRO">
+                  <select class="role-select" [(ngModel)]="u.roleId" (change)="onRoleChange(u)">
+                    <option *ngFor="let r of roles" [value]="r.id">{{ r.roleName }}</option>
+                  </select>
+                </ng-container>
+                <ng-template #roleRO><span class="role-badge">{{ u.roleName }}</span></ng-template>
+              </td>
+              <td>
+                <ng-container *ngIf="scopeSvc.canManageUsers(); else statusRO">
+                  <select class="status-select"
+                    [class.status-active]="u.active===true || u.active.toString()==='true'"
+                    [class.status-inactive]="u.active===false || u.active.toString()==='false'"
+                    [(ngModel)]="u.active" (change)="onStatusChange(u)">
+                    <option [ngValue]="true">Active</option>
+                    <option [ngValue]="false">Inactive</option>
+                  </select>
+                </ng-container>
+                <ng-template #statusRO>
+                  <span class="status-ro" [class.status-active]="u.active">{{ u.active ? "Active" : "Inactive" }}</span>
+                </ng-template>
+              </td>
+              <td class="text-right">
+                <button class="icon-btn-sm danger" *ngIf="scopeSvc.canDeleteUsers()" (click)="deleteUser(u)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SCOPES AND ROLES - organized by role -->
+    <section *ngIf="activeTab==='scopes' && scopeSvc.canSeeScopesTab()" class="panel">
+      <div class="panel-header-row">
+        <div>
+          <h1 class="panel-title">Scopes and Roles</h1>
+          <p class="panel-subtitle">Manage which scopes are assigned to each role.</p>
+        </div>
+        <button class="primary-btn" (click)="showAddScope=!showAddScope">{{ showAddScope ? "Cancel" : "+ Add Scope" }}</button>
+      </div>
+
+      <div class="card" *ngIf="showAddScope">
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Scope Name (must match ScopeEnum)</label>
+            <input type="text" class="field-input" [(ngModel)]="newScope.scopeName" placeholder="e.g. EXPORT_REPORT" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Assign To Role</label>
+            <select class="field-input" [(ngModel)]="newScope.targetRoleId">
+              <option [value]="0" disabled>Select role...</option>
+              <option *ngFor="let r of roles" [value]="r.id">{{ r.roleName }}</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint-text">SUPER_ADMIN is automatically granted this scope.</p>
+        <div class="card-actions"><span></span>
+          <button class="primary-btn" (click)="createScope()">{{ creatingScope ? "Creating..." : "Create Scope" }}</button>
+        </div>
+      </div>
+
+      <!-- Role-Scope organized cards -->
+      <div *ngIf="loadingRoleScopes" class="loading-text">Loading role scopes...</div>
+      <div class="role-scope-list" *ngIf="!loadingRoleScopes">
+        <div class="rs-card" *ngFor="let rsm of roleScopeMaps">
+          <div class="rs-header" (click)="rsm.expanded=!rsm.expanded">
+            <div class="rs-left">
+              <div class="rs-avatar" [class.superadmin]="rsm.role.roleName==='SUPER_ADMIN'"
+                   [class.admin]="rsm.role.roleName==='ADMIN'"
+                   [class.accountant]="rsm.role.roleName==='ACCOUNTANT'"
+                   [class.viewer]="rsm.role.roleName==='VIEWER'">
+                {{ rsm.role.roleName.charAt(0) }}
+              </div>
+              <div>
+                <p class="rs-role-name">{{ rsm.role.roleName }}</p>
+                <p class="rs-scope-count">{{ rsm.scopeNames.length }} scopes assigned</p>
+              </div>
+            </div>
+            <div class="rs-actions">
+              <button class="assign-btn" (click)="openAssignScope(rsm); $event.stopPropagation()">
+                Edit Scopes
+              </button>
+              <svg class="rs-chevron" [class.rotated]="rsm.expanded"
+                   xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+          <div class="rs-body" [class.open]="rsm.expanded">
+            <div class="scope-category-wrap" *ngFor="let cat of getScopesByCategory()">
+              <ng-container *ngIf="getAssignedScopesInCat(rsm, cat.scopes).length > 0">
+                <p class="scope-cat-label">{{ cat.category }}</p>
+                <div class="scope-tags">
+                  <span class="scope-tag" *ngFor="let s of getAssignedScopesInCat(rsm, cat.scopes)">
+                    {{ s.name }}
+                  </span>
+                </div>
+              </ng-container>
+            </div>
+            <p class="no-scopes" *ngIf="rsm.scopeNames.length===0">No scopes assigned to this role.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROLE MANAGEMENT - no delete, only add + active/inactive -->
+    <section *ngIf="activeTab==='roles' && scopeSvc.isSuperAdmin()" class="panel">
+      <div class="panel-header-row">
+        <div>
+          <h1 class="panel-title">Role Management</h1>
+          <p class="panel-subtitle">Add new roles. Built-in roles are protected and cannot be deleted.</p>
+        </div>
+        <button class="primary-btn" (click)="showAddRole=!showAddRole">{{ showAddRole ? "Cancel" : "+ Add Role" }}</button>
+      </div>
+
+      <!-- Success/Error messages -->
+      <div class="success-banner" *ngIf="roleSuccessMsg">{{ roleSuccessMsg }}</div>
+      <div class="error-banner"   *ngIf="roleErrorMsg">{{ roleErrorMsg }}</div>
+
+      <div class="card" *ngIf="showAddRole">
+        <div class="field-group" style="max-width:360px;margin-bottom:16px">
+          <label class="field-label">Role Name</label>
+          <input type="text" class="field-input" [(ngModel)]="newRoleName"
+                 placeholder="e.g. MANAGER" style="text-transform:uppercase" />
+          <p class="hint-text" style="margin-top:6px">Will be stored in uppercase. Cannot be deleted once created.</p>
+        </div>
+        <div class="card-actions">
+          <span></span>
+          <button class="primary-btn" (click)="createRole()" [disabled]="creatingRole">
+            {{ creatingRole ? "Creating..." : "Create Role" }}
+          </button>
+        </div>
+      </div>
+
+      <div class="card no-pad">
+        <table class="user-table">
+          <thead>
+            <tr><th>ROLE NAME</th><th>TYPE</th><th>SCOPES</th><th class="text-right">STATUS</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of roles">
+              <td>
+                <div class="user-cell">
+                  <div class="role-dot"
+                       [class.superadmin]="r.roleName==='SUPER_ADMIN'"
+                       [class.admin]="r.roleName==='ADMIN'"
+                       [class.accountant]="r.roleName==='ACCOUNTANT'"
+                       [class.viewer]="r.roleName==='VIEWER'"
+                       [class.custom]="!isBuiltInRole(r.roleName)">
+                    {{ r.roleName.charAt(0) }}
+                  </div>
+                  <span class="user-name">{{ r.roleName }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="built-in-tag" *ngIf="isBuiltInRole(r.roleName)">Built-in</span>
+                <span class="custom-tag"   *ngIf="!isBuiltInRole(r.roleName)">Custom</span>
+              </td>
+              <td>
+                <span class="scope-count-pill">
+                  {{ getRoleScopeCountByRoleId(r.id) }} scopes
+                </span>
+              </td>
+              <td class="text-right">
+                <span class="protected-label" *ngIf="isBuiltInRole(r.roleName)">Protected</span>
+                <span class="active-label"    *ngIf="!isBuiltInRole(r.roleName)">Active</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>

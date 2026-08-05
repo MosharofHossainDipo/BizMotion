@@ -1,0 +1,49 @@
+INSERT INTO roles (role_name) VALUES ('SUPER_ADMIN');
+INSERT INTO roles (role_name) VALUES ('ADMIN');
+INSERT INTO roles (role_name) VALUES ('ACCOUNTANT');
+INSERT INTO roles (role_name) VALUES ('VIEWER');
+INSERT INTO scopes (name) VALUES ('CREATE_USER');
+INSERT INTO scopes (name) VALUES ('EDIT_USER');
+INSERT INTO scopes (name) VALUES ('DELETE_USER');
+INSERT INTO scopes (name) VALUES ('VIEW_USER');
+INSERT INTO scopes (name) VALUES ('ASSIGN_ROLE');
+INSERT INTO scopes (name) VALUES ('CREATE_INVOICE');
+INSERT INTO scopes (name) VALUES ('EDIT_INVOICE');
+INSERT INTO scopes (name) VALUES ('DELETE_INVOICE');
+INSERT INTO scopes (name) VALUES ('VIEW_INVOICE');
+INSERT INTO scopes (name) VALUES ('APPROVE_INVOICE');
+INSERT INTO scopes (name) VALUES ('CREATE_PAYMENT');
+INSERT INTO scopes (name) VALUES ('VIEW_PAYMENT');
+INSERT INTO scopes (name) VALUES ('PROCESS_PAYMENT');
+INSERT INTO scopes (name) VALUES ('REFUND_PAYMENT');
+INSERT INTO scopes (name) VALUES ('VIEW_LEDGER');
+INSERT INTO scopes (name) VALUES ('POST_JOURNAL_ENTRY');
+INSERT INTO scopes (name) VALUES ('CLOSE_PERIOD');
+INSERT INTO scopes (name) VALUES ('VIEW_REPORT');
+INSERT INTO scopes (name) VALUES ('EXPORT_REPORT');
+INSERT INTO scopes (name) VALUES ('GENERATE_REPORT');
+INSERT INTO scopes (name) VALUES ('CREATE_CUSTOMER');
+INSERT INTO scopes (name) VALUES ('EDIT_CUSTOMER');
+INSERT INTO scopes (name) VALUES ('VIEW_CUSTOMER');
+INSERT INTO scopes (name) VALUES ('DELETE_CUSTOMER');
+INSERT INTO scopes (name) VALUES ('VIEW_AUDIT_LOG');
+INSERT INTO scopes (name) VALUES ('MANAGE_SETTINGS');
+INSERT INTO role_scopes (role_id, scope_id)
+    SELECT r.id, s.id FROM roles r, scopes s WHERE r.role_name = 'SUPER_ADMIN';
+INSERT INTO role_scopes (role_id, scope_id)
+    SELECT r.id, s.id FROM roles r, scopes s
+    WHERE r.role_name = 'ADMIN'
+    AND s.name IN ('CREATE_USER','EDIT_USER','DELETE_USER','VIEW_USER','ASSIGN_ROLE','VIEW_AUDIT_LOG','MANAGE_SETTINGS');
+INSERT INTO role_scopes (role_id, scope_id)
+    SELECT r.id, s.id FROM roles r, scopes s
+    WHERE r.role_name = 'ACCOUNTANT'
+    AND s.name IN ('CREATE_INVOICE','EDIT_INVOICE','DELETE_INVOICE','VIEW_INVOICE','APPROVE_INVOICE',
+        'CREATE_PAYMENT','VIEW_PAYMENT','PROCESS_PAYMENT','REFUND_PAYMENT',
+        'VIEW_LEDGER','POST_JOURNAL_ENTRY','CLOSE_PERIOD',
+        'VIEW_REPORT','EXPORT_REPORT','GENERATE_REPORT',
+        'CREATE_CUSTOMER','EDIT_CUSTOMER','VIEW_CUSTOMER','DELETE_CUSTOMER','VIEW_USER');
+INSERT INTO role_scopes (role_id, scope_id)
+    SELECT r.id, s.id FROM roles r, scopes s
+    WHERE r.role_name = 'VIEWER'
+    AND s.name IN ('VIEW_INVOICE','VIEW_PAYMENT','VIEW_LEDGER','VIEW_REPORT','VIEW_CUSTOMER','VIEW_USER');
+COMMIT;

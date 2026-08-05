@@ -1,0 +1,94 @@
+<div class="page-content">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Manage Accounts</h1>
+      <p class="page-sub">Central overview of every company financial account</p>
+    </div>
+    <div class="header-actions">
+      <div class="search-wrap">
+        <input type="text" class="search-input" [(ngModel)]="search" placeholder="Search accounts..." />
+      </div>
+      <button class="primary-btn" (click)="addNew()">+ New Account</button>
+    </div>
+  </div>
+
+  <div class="summary-row" *ngIf="!loading && !error">
+    <div class="summary-card">
+      <p class="summary-label">Total Accounts</p>
+      <p class="summary-value">{{ totalAccounts }}</p>
+    </div>
+    <div class="summary-card">
+      <p class="summary-label">Grand Total Balance</p>
+      <p class="summary-value">৳ {{ grandTotalBalance | number:"1.2-2" }}</p>
+    </div>
+  </div>
+
+  <div class="error-banner" *ngIf="error">{{ error }}<button class="retry-btn" (click)="load()">Retry</button></div>
+
+  <div class="loading-inner" *ngIf="loading"><div class="spinner"></div><span>Loading accounts...</span></div>
+
+  <div class="acc-grid" *ngIf="!loading && !error">
+    <div class="acc-row-card" *ngFor="let a of filtered">
+      <div class="acc-row-head">
+        <div>
+          <p class="a-title">{{ a.accountTitle }}</p>
+          <p class="a-code">{{ a.accountCode }}</p>
+        </div>
+        <span class="status-badge" [class.active]="a.status==='Active'" [class.inactive]="a.status!=='Active'">{{ a.status }}</span>
+      </div>
+
+      <div class="acc-figures">
+        <div class="fig"><span class="fig-label">Initial Balance</span><span class="fig-val">৳ {{ a.initialBalanceBdt | number:"1.2-2" }}</span></div>
+        <div class="fig"><span class="fig-label">Total Deposits</span><span class="fig-val ok">+ ৳ {{ a.totalDeposits | number:"1.2-2" }}</span></div>
+        <div class="fig"><span class="fig-label">Total Expenses</span><span class="fig-val err">- ৳ {{ a.totalExpenses | number:"1.2-2" }}</span></div>
+        <div class="fig"><span class="fig-label">Transfers In</span><span class="fig-val ok">+ ৳ {{ a.totalTransfersIn | number:"1.2-2" }}</span></div>
+        <div class="fig"><span class="fig-label">Transfers Out</span><span class="fig-val err">- ৳ {{ a.totalTransfersOut | number:"1.2-2" }}</span></div>
+      </div>
+
+      <div class="acc-row-footer">
+        <div class="balance-block">
+          <span class="balance-label">Current Balance</span>
+          <span class="balance-value">৳ {{ a.currentBalance | number:"1.2-2" }}</span>
+        </div>
+        <div class="acc-actions">
+          <button class="tbl-btn" (click)="openBalanceModal(a)">+ Record Initial Balance</button>
+          <button class="tbl-btn danger" [disabled]="deletingId===a.id" (click)="delete(a)">
+            {{ deletingId===a.id ? "..." : "Delete" }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filtered.length === 0">
+      <p class="empty-title">No accounts found</p>
+      <p class="empty-sub">{{ search ? "No results for \"" + search + "\"" : "Create your first account to get started." }}</p>
+    </div>
+  </div>
+
+  <!-- Record Initial Balance Modal -->
+  <div class="modal-overlay" *ngIf="showBalanceModal" (click)="closeBalanceModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Record Initial Balance</h3>
+        <button class="modal-close" (click)="closeBalanceModal()" [disabled]="savingBalance">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-account-name">{{ balanceTarget?.accountTitle }}</p>
+        <div class="field-block">
+          <label class="field-label">Initial Balance (BDT)</label>
+          <input class="input" type="number" step="0.01" [(ngModel)]="balanceBdt" />
+        </div>
+        <div class="field-block">
+          <label class="field-label">Initial Balance (USD)</label>
+          <input class="input" type="number" step="0.01" [(ngModel)]="balanceUsd" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="tbl-btn" (click)="closeBalanceModal()" [disabled]="savingBalance">Cancel</button>
+        <button class="primary-btn" (click)="saveBalance()" [disabled]="savingBalance">
+          {{ savingBalance ? "Saving..." : "Save" }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

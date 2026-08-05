@@ -1,0 +1,174 @@
+<div class="exp-page">
+
+  <!-- Page head -->
+  <div class="page-head">
+    <nav class="breadcrumb">
+      <a href="javascript:void(0)">Dashboard</a>
+      <span class="material-symbols-outlined crumb-chevron">chevron_right</span>
+      <span class="crumb-current">New Expense</span>
+    </nav>
+    <h2 class="page-title">New Expense</h2>
+    <p class="page-sub">Record a new transaction entry into your accounts.</p>
+  </div>
+
+  <p class="server-error" *ngIf="serverError">{{ serverError }}</p>
+
+  <!-- Top filter bar: Account / Date / Description / Category -->
+  <div class="glass-panel filter-bar">
+    <div class="filter-field">
+      <label class="field-label">Account</label>
+      <div class="select-wrap">
+        <select class="input" [(ngModel)]="form.accountId" [disabled]="loadingAccounts">
+          <option [ngValue]="null">{{ loadingAccounts ? "Loading accounts..." : "Choose an Account" }}</option>
+          <option *ngFor="let a of accounts" [ngValue]="a.id">{{ a.accountTitle }}</option>
+        </select>
+        <span class="material-symbols-outlined select-chevron">expand_more</span>
+      </div>
+    </div>
+
+    <div class="filter-field">
+      <label class="field-label">Date</label>
+      <div class="date-wrap">
+        <span class="material-symbols-outlined date-icon">calendar_today</span>
+        <input class="input date-input" type="date" [(ngModel)]="form.date" />
+      </div>
+    </div>
+
+    <div class="filter-field">
+      <label class="field-label">Description</label>
+      <input class="input" type="text" placeholder="Short note about this expense" [(ngModel)]="form.description" />
+    </div>
+
+    <div class="filter-field">
+      <label class="field-label">Category</label>
+      <app-combo-input [(ngModel)]="form.category" [options]="lookups.categories" placeholder="e.g. Office Rent"></app-combo-input>
+    </div>
+  </div>
+
+  <!-- Main form card -->
+  <div class="glass-panel form-card">
+    <div class="form-grid">
+
+      <div class="field-block">
+        <label class="field-label">Amount</label>
+        <div class="amount-wrap">
+          <span class="amount-prefix">$</span>
+          <input class="input amount-input" type="number" step="0.01" min="0" placeholder="0.00" [(ngModel)]="form.amount" />
+        </div>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Currency</label>
+        <div class="select-wrap">
+          <select class="input" [(ngModel)]="form.currency">
+            <option>BDT</option>
+            <option>USD</option>
+            <option>EUR</option>
+          </select>
+          <span class="material-symbols-outlined select-chevron">expand_more</span>
+        </div>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Tags</label>
+        <input class="input" type="text" [(ngModel)]="form.tags" placeholder="comma, separated, tags" />
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Company</label>
+        <app-combo-input [(ngModel)]="form.company" [options]="companyOptions" placeholder="None"></app-combo-input>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Payee</label>
+        <app-combo-input [(ngModel)]="form.payee" [options]="payeeOptions" placeholder="Choose Contact"></app-combo-input>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Staff</label>
+        <app-combo-input [(ngModel)]="form.staff" [options]="lookups.staff" placeholder="None"></app-combo-input>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Payment Method</label>
+        <app-combo-input [(ngModel)]="form.paymentMethod" [options]="lookups.paymentMethods" placeholder="Select Payment Method"></app-combo-input>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Status</label>
+        <div class="select-wrap">
+          <select class="input" [(ngModel)]="form.status">
+            <option>Cleared</option>
+            <option>Pending</option>
+          </select>
+          <span class="material-symbols-outlined select-chevron">expand_more</span>
+        </div>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Reference Number</label>
+        <input class="input" type="text" [(ngModel)]="form.referenceNo" placeholder="Transaction ID, Check No." />
+      </div>
+
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-create" (click)="save()" [disabled]="saving">
+        <span class="material-symbols-outlined icon-sm" *ngIf="!saving">add_circle</span>
+        <span class="material-symbols-outlined icon-sm spin" *ngIf="saving">sync</span>
+        {{ saving ? "Saving..." : "Create Expense Entry" }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Recent Expenses -->
+  <div class="glass-panel activity-card">
+    <div class="activity-head">
+      <h3 class="activity-title">Recent Expenses</h3>
+      <a class="view-all-link" href="javascript:void(0)">
+        View All History
+        <span class="material-symbols-outlined icon-xs">arrow_forward</span>
+      </a>
+    </div>
+
+    <div class="loading-inner" *ngIf="loadingExpenses"><div class="spinner"></div><span>Loading expenses...</span></div>
+    <p class="list-error" *ngIf="!loadingExpenses && listError">{{ listError }}</p>
+
+    <div class="table-wrap" *ngIf="!loadingExpenses && !listError">
+      <table class="exp-table">
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Description</th>
+            <th class="text-center">Status</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of expenses">
+            <td>
+              <div class="account-cell">
+                <div class="avatar">{{ (e.accountTitle || "?").slice(0, 2).toUpperCase() }}</div>
+                <div class="account-name">{{ e.accountTitle }}</div>
+              </div>
+            </td>
+            <td>
+              <div class="exp-desc-main" *ngIf="e.description">{{ e.description }}</div>
+              <span class="exp-code">{{ e.expenseCode }}</span>
+            </td>
+            <td class="text-center">
+              <span class="status-badge" [class.cleared]="e.status==='Cleared'" [class.pending]="e.status!=='Cleared'">{{ e.status }}</span>
+            </td>
+            <td class="text-right">
+              <div class="amount-cell">{{ e.currency }} {{ e.amount | number:"1.2-2" }}</div>
+            </td>
+          </tr>
+          <tr *ngIf="expenses.length === 0">
+            <td colspan="4" class="empty-row">No expenses recorded yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

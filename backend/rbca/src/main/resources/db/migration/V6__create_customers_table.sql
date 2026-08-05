@@ -1,0 +1,23 @@
+CREATE TABLE customers (
+    id                 NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    customer_code      VARCHAR2(50)  NOT NULL,
+    name               VARCHAR2(200) NOT NULL,
+    customer_type      VARCHAR2(50)  NOT NULL,
+    industry           VARCHAR2(100),
+    email              VARCHAR2(150) NOT NULL,
+    phone              VARCHAR2(30),
+    company            VARCHAR2(200),
+    website            VARCHAR2(200),
+    address            VARCHAR2(1000),
+    customer_group     VARCHAR2(50),
+    preferred_language VARCHAR2(50),
+    notes              VARCHAR2(2000),
+    portal_access      NUMBER(1)     DEFAULT 0 NOT NULL,
+    portal_username    VARCHAR2(100),
+    status             VARCHAR2(20)  DEFAULT 'Active' NOT NULL,
+    created_by         NUMBER,
+    created_at         TIMESTAMP     DEFAULT SYSTIMESTAMP NOT NULL,
+    updated_at         TIMESTAMP     DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT cust_code_uk  UNIQUE (customer_code),
+    CONSTRAINT cust_email_uk UNIQUE (email)
+)

@@ -1,0 +1,144 @@
+<!-- Page wrapper: centered glass card on soft multi-tone gradient background -->
+<div class="page-wrapper">
+  <div class="page-inner">
+
+    <!-- Branding -->
+    <div class="brand-block">
+      <img src="logo.png" alt="BizMotion Logo" class="brand-logo" />
+      <h1 class="brand-name">BizMotion</h1>
+    </div>
+
+    <!-- Registration card -->
+    <div class="glass-card">
+
+      <!-- Success state -->
+      <div class="success-msg" *ngIf="showSuccess">
+        Your account has been created successfully!
+        <br><a routerLink="/login">Click here to login</a>
+      </div>
+
+      <ng-container *ngIf="!showSuccess">
+
+        <!-- Header -->
+        <div class="card-header">
+          <h2 class="card-title">Create Account</h2>
+          <p class="card-subtitle">Register to get started with BIZMOTION LIMITED.</p>
+        </div>
+
+        <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="register-form">
+
+          <!-- Username -->
+          <div class="field-group">
+            <label class="field-label" for="username">Username</label>
+            <input
+              id="username"
+              formControlName="username"
+              type="text"
+              class="field-input"
+              [class.error]="f['username'].invalid && f['username'].touched"
+              placeholder="e.g. sazzad.hossain"
+            />
+            <span class="field-error" *ngIf="f['username'].errors?.['required'] && f['username'].touched">
+              Username is required
+            </span>
+            <span class="field-error" *ngIf="f['username'].errors?.['minlength'] && f['username'].touched">
+              Username must be at least 4 characters
+            </span>
+            <span class="field-error" *ngIf="f['username'].errors?.['pattern'] && f['username'].touched">
+              Username cannot contain spaces
+            </span>
+          </div>
+
+          <!-- Work Email -->
+          <div class="field-group">
+            <label class="field-label" for="email">Work Email</label>
+            <input
+              id="email"
+              formControlName="email"
+              type="email"
+              class="field-input"
+              [class.error]="f['email'].invalid && f['email'].touched"
+              placeholder="name@company.com"
+            />
+            <span class="field-error" *ngIf="f['email'].invalid && f['email'].touched">
+              Enter a valid email address
+            </span>
+          </div>
+
+          <!-- Password row -->
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="password">Password</label>
+              <input
+                id="password"
+                formControlName="password"
+                type="password"
+                class="field-input"
+                [class.error]="f['password'].invalid && f['password'].touched"
+                placeholder="***********"
+              />
+              <span class="field-error" *ngIf="f['password'].errors?.['required'] && f['password'].touched">
+                Password is required
+              </span>
+              <span class="field-error" *ngIf="f['password'].errors?.['minlength'] && f['password'].touched">
+                Password must be at least 8 characters
+              </span>
+              <span class="field-error" *ngIf="f['password'].errors?.['pattern'] && f['password'].touched">
+                Must contain 1 number and 1 special character
+              </span>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="confirmPassword">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                formControlName="confirmPassword"
+                type="password"
+                class="field-input"
+                [class.error]="f['confirmPassword'].invalid && f['confirmPassword'].touched"
+                placeholder="***********"
+              />
+              <span class="field-error" *ngIf="f['confirmPassword'].errors?.['required'] && f['confirmPassword'].touched">
+                Please confirm your password
+              </span>
+              <span class="field-error" *ngIf="registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched">
+                Passwords do not match
+              </span>
+            </div>
+          </div>
+
+          <!-- Server error -->
+          <div class="server-error" *ngIf="serverError">{{ serverError }}</div>
+
+          <!-- Submit -->
+          <button type="submit" class="submit-btn" [disabled]="registerForm.invalid || loading" [class.btn-loading]="loading">
+            <span *ngIf="!loading">Create Account</span>
+            <span *ngIf="loading">Creating account...</span>
+          </button>
+
+          <p class="form-link">
+            Already have an account? <a routerLink="/login">Sign In</a>
+          </p>
+        </form>
+
+      </ng-container>
+    </div>
+
+    <!-- Footer -->
+    <p class="page-footer">
+      &copy; 2026 BIZMOTION LIMITED. All rights reserved.
+      By signing up, you agree to our <a href="#" class="footer-link">Terms of Service</a>.
+    </p>
+
+  </div>
+</div>
+<!-- SUCCESS POPUP OVERLAY -->
+<div class="success-overlay" *ngIf="showSuccess">
+  <div class="success-modal">
+    <div class="success-icon">&#10003;</div>
+    <h2 class="success-title">Registration Successful!</h2>
+    <p class="success-msg">Your account has been created successfully.</p>
+    <p class="success-sub">Redirecting to login in <strong>{{ countdown }}</strong> seconds...</p>
+    <button class="success-btn" (click)="goToLogin()">Go to Login Now</button>
+  </div>
+</div>

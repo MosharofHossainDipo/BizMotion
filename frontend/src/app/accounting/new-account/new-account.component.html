@@ -1,0 +1,68 @@
+<div class="acc-page">
+  <div class="acc-card">
+    <div class="acc-accent"></div>
+    <div class="acc-body">
+      <h1 class="acc-title">Add New Account</h1>
+      <p class="acc-sub">Configure your corporate account details to begin tracking transactions.</p>
+
+      <p class="server-error" *ngIf="serverError">{{ serverError }}</p>
+
+      <div class="field-block">
+        <label class="field-label">Account Title <span class="req">*</span></label>
+        <input class="input" type="text" placeholder="e.g. Corporate Operating Account" [(ngModel)]="form.accountTitle" />
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Description</label>
+        <textarea class="input textarea" rows="3" placeholder="Brief overview of account purpose..." [(ngModel)]="form.description"></textarea>
+      </div>
+
+      <div class="grid-2">
+        <div class="field-block">
+          <label class="field-label">Initial Balance [ USD ]</label>
+          <div class="prefix-input">
+            <span class="prefix">$</span>
+            <input class="input" type="number" step="0.01" placeholder="0.00" [(ngModel)]="form.initialBalanceUsd" />
+          </div>
+        </div>
+        <div class="field-block">
+          <label class="field-label">Initial Balance [ BDT ]</label>
+          <div class="prefix-input">
+            <span class="prefix">৳</span>
+            <input class="input" type="number" step="0.01" placeholder="0.00" [(ngModel)]="form.initialBalanceBdt" />
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field-block">
+          <label class="field-label">Account Number</label>
+          <input class="input" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" [(ngModel)]="form.accountNumber" />
+        </div>
+        <div class="field-block">
+          <label class="field-label">Internet Banking URL</label>
+          <input class="input" type="text" placeholder="https://bankportal.com" [(ngModel)]="form.internetBankingUrl" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field-block">
+          <label class="field-label">Contact Person</label>
+          <input class="input" type="text" placeholder="Legal representative name" [(ngModel)]="form.contactPerson" />
+        </div>
+        <div class="field-block">
+          <label class="field-label">Phone</label>
+          <input class="input" type="text" placeholder="+1 (555) 000-0000" [(ngModel)]="form.phone" />
+        </div>
+      </div>
+
+      <div class="acc-actions">
+        <button class="btn-text" (click)="discard()" [disabled]="saving">Discard Changes</button>
+        <button class="btn-primary" (click)="save()" [disabled]="saving">
+          {{ saving ? "Saving..." : "Save Account" }}
+          <span class="material-symbols-outlined icon-sm">check_circle</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,176 @@
+<div class="page-content">
+
+  <header class="page-hero">
+    <div class="eyebrow-row">
+      <span class="eyebrow">Motion CRM</span>
+      <span class="eyebrow-line"></span>
+    </div>
+    <h1 class="page-title">Add New Customer</h1>
+    <p class="page-sub">Configure a new client profile with comprehensive business details. All data is encrypted and synced across the MOTION ecosystem.</p>
+  </header>
+
+  <div class="success-banner" *ngIf="success">
+    <div class="success-inner">
+      <span class="success-check">&#10003;</span>
+      <div>
+        <p class="success-title">Customer added successfully!</p>
+        <p class="success-sub">Redirecting to customer list...</p>
+      </div>
+    </div>
+    <button class="link-btn" (click)="router.navigate(['/customers/list'])">View All Customers</button>
+  </div>
+  <div class="error-banner" *ngIf="serverError">{{ serverError }}</div>
+
+  <ng-container *ngIf="!success">
+    <div class="form-grid">
+
+      <!-- Left column -->
+      <div class="col-main">
+
+        <section class="glass-panel">
+          <div class="panel-head">
+            <div class="panel-icon">&#128100;</div>
+            <div>
+              <h2 class="panel-title">Basic Information</h2>
+              <p class="panel-sub">Identity and classification details</p>
+            </div>
+          </div>
+          <div class="field-grid two-col">
+            <div class="field-group">
+              <label class="field-label">Full Name <span class="req">*</span></label>
+              <input type="text" class="field-input" [(ngModel)]="form.name" placeholder="Enter complete name" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Code (Auto-generated)</label>
+              <input type="text" class="field-input readonly" [value]="customerCode" readonly />
+            </div>
+          </div>
+          <div class="field-grid two-col">
+            <div class="field-group">
+              <label class="field-label">Customer Type</label>
+              <select class="field-input" [(ngModel)]="form.customerType">
+                <option *ngFor="let t of customerTypes">{{ t }}</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Industry</label>
+              <input type="text" class="field-input" [(ngModel)]="form.industry" placeholder="e.g. Technology, Finance" />
+            </div>
+          </div>
+          <div class="field-grid two-col">
+            <div class="field-group">
+              <label class="field-label">Company</label>
+              <input type="text" class="field-input" [(ngModel)]="form.company" placeholder="Legal / trading name" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Customer Group</label>
+              <input type="text" class="field-input" [(ngModel)]="form.customerGroup" placeholder="e.g. VIP, Wholesale" />
+            </div>
+          </div>
+        </section>
+
+        <section class="glass-panel">
+          <div class="panel-head">
+            <div class="panel-icon panel-icon-alt">&#128222;</div>
+            <div>
+              <h2 class="panel-title">Contact Details</h2>
+              <p class="panel-sub">How to reach your customer</p>
+            </div>
+          </div>
+          <div class="field-grid two-col">
+            <div class="field-group">
+              <label class="field-label">Email Address <span class="req">*</span></label>
+              <input type="email" class="field-input" [(ngModel)]="form.email" (ngModelChange)="onEmailChange()" placeholder="name@company.com" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Phone Number</label>
+              <input type="text" class="field-input" [(ngModel)]="form.phone" placeholder="+1 (555) 000-0000" />
+            </div>
+          </div>
+          <div class="field-grid two-col">
+            <div class="field-group">
+              <label class="field-label">Website</label>
+              <input type="text" class="field-input" [(ngModel)]="form.website" placeholder="https://www.example.com" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Preferred Language</label>
+              <select class="field-input" [(ngModel)]="form.preferredLanguage">
+                <option *ngFor="let l of languages">{{ l }}</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <div class="split-grid">
+          <section class="glass-panel">
+            <div class="panel-head-sm">
+              <span class="panel-icon-sm">&#128205;</span>
+              <h2 class="panel-title-sm">Address</h2>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Full Address</label>
+              <textarea class="field-input textarea" rows="4" [(ngModel)]="form.address" placeholder="Street, City, State, Postal Code, Country"></textarea>
+            </div>
+          </section>
+          <section class="glass-panel">
+            <div class="panel-head-sm">
+              <span class="panel-icon-sm">&#128196;</span>
+              <h2 class="panel-title-sm">Notes</h2>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Additional Information</label>
+              <textarea class="field-input textarea" rows="4" [(ngModel)]="form.notes" placeholder="Any internal remarks or special instructions..."></textarea>
+            </div>
+          </section>
+        </div>
+
+      </div>
+
+      <!-- Right column -->
+      <div class="col-side">
+
+        <section class="glass-panel">
+          <div class="security-head">
+            <div class="security-head-left">
+              <div class="security-icon">&#128274;</div>
+              <h2 class="panel-title-sm">Security &amp; Portal</h2>
+            </div>
+            <span class="switch" [class.on]="portalEnabled" (click)="togglePortal()">
+              <span class="switch-dot"></span>
+            </span>
+          </div>
+          <div class="security-note">
+            <p class="security-note-title">Customer Portal Access</p>
+            <p class="security-note-sub">Secure login for client collaboration</p>
+          </div>
+          <div class="field-group" *ngIf="portalEnabled" style="margin-top:12px">
+            <label class="field-label">Portal Username</label>
+            <input type="text" class="field-input" [(ngModel)]="form.portalUsername" placeholder="Suggested: customer_email" />
+          </div>
+        </section>
+
+        <section class="glass-panel progress-card">
+          <h3 class="panel-title-sm" style="margin-bottom:14px">Complete Your Profile</h3>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="profileCompletion"></div>
+          </div>
+          <p class="progress-percent">{{ profileCompletion }}% complete</p>
+          <p class="progress-hint">
+            {{ profileCompletion >= 100
+              ? "All set! Your customer profile is fully filled in."
+              : "Fill in industry and group data to help with analytics and reporting." }}
+          </p>
+        </section>
+
+        <div class="action-stack">
+          <button class="save-btn" (click)="save()" [disabled]="saving">
+            <span class="btn-icon">&#128190;</span>
+            {{ saving ? "Saving..." : "Save Customer" }}
+          </button>
+          <button class="cancel-btn" (click)="cancel()" [disabled]="saving">Cancel</button>
+        </div>
+
+      </div>
+    </div>
+  </ng-container>
+</div>

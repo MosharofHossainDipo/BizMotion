@@ -1,0 +1,45 @@
+<div class="page-content">
+  <div class="page-header">
+    <div><h1 class="page-title">Customer Groups</h1><p class="page-sub">Organize customers into segments</p></div>
+    <button class="primary-btn" (click)="showAdd=!showAdd">{{ showAdd ? "Cancel" : "+ Add Group" }}</button>
+  </div>
+
+  <div class="form-card" *ngIf="showAdd">
+    <div class="field-row">
+      <div class="field-group"><label class="field-label">Group Name *</label>
+        <input type="text" class="field-input" [(ngModel)]="newGroup.name" placeholder="e.g. Enterprise" /></div>
+      <div class="field-group"><label class="field-label">Color</label>
+        <input type="color" class="color-input" [(ngModel)]="newGroup.color" /></div>
+    </div>
+    <div class="field-group" style="margin-bottom:16px"><label class="field-label">Description</label>
+      <input type="text" class="field-input" [(ngModel)]="newGroup.description" placeholder="Short description..." /></div>
+    <div class="form-actions">
+      <button class="cancel-btn" (click)="showAdd=false">Cancel</button>
+      <button class="save-btn" (click)="addGroup()">Create Group</button>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><p>Loading groups...</p>
+  </div>
+  <div class="error-banner" *ngIf="!loading && error">{{ error }}</div>
+
+  <div class="groups-grid" *ngIf="!loading">
+    <div class="group-card" *ngFor="let g of groups">
+      <div class="group-top">
+        <div class="group-dot" [style.background]="g.color"></div>
+        <div><h3 class="group-name">{{ g.name }}</h3><p class="group-desc">{{ g.description }}</p></div>
+      </div>
+      <div class="group-footer">
+        <span class="member-count">{{ g.members }} members</span>
+        <div class="group-actions">
+          <button class="tbl-btn">Edit</button>
+          <button class="tbl-btn danger" (click)="delete(g.id)">Delete</button>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="groups.length === 0" style="padding:40px;text-align:center;color:#64748b">
+      No groups found. Add customer groups to see them here.
+    </div>
+  </div>
+</div>

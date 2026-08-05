@@ -1,0 +1,29 @@
+:host{--primary:#003874;--primary-c:#1a4f95;--on-surf:#1a1c20;--on-sv:#64748b;--border:#E2E8F0;--surf-low:#f8fafc;--err:#EF4444;font-family:"Inter","Segoe UI",sans-serif}
+.page-content{padding:28px 32px 48px}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:16px}
+.page-title{font-size:26px;font-weight:800;color:var(--on-surf);margin-bottom:4px}
+.page-sub{font-size:14px;color:var(--on-sv)}
+.header-actions{display:flex;align-items:center;gap:12px}
+.search-input{width:220px;padding:9px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none}
+.search-input:focus{border-color:var(--primary)}
+.primary-btn{padding:9px 18px;background:var(--primary);color:white;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.primary-btn:hover{background:var(--primary-c)}
+.table-card{background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl thead tr{background:var(--surf-low);border-bottom:1px solid var(--border)}
+.tbl th{padding:11px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--on-sv);text-align:left}
+.tbl tbody tr{border-bottom:1px solid var(--border);transition:background .12s}
+.tbl tbody tr:last-child{border-bottom:none}
+.tbl tbody tr:hover{background:var(--surf-low)}
+.tbl td{padding:13px 16px;font-size:13px}
+.tr{text-align:right!important}
+.muted{color:var(--on-sv)}
+.fw6{font-weight:700;color:var(--on-surf)}
+.file-cell{display:flex;align-items:center;gap:12px}
+.file-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0}
+.type-badge{display:inline-block;padding:2px 8px;background:#f1f5f9;color:var(--on-sv);border-radius:5px;font-size:11px;font-weight:700}
+.tbl-btn{padding:5px 12px;background:white;border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;color:var(--primary);margin-left:4px}
+.tbl-btn:hover{background:var(--surf-low)}
+.tbl-btn.danger{color:var(--err);border-color:#fecaca}
+.tbl-btn.danger:hover{background:#fef2f2}
+.empty-row{text-align:center;padding:40px;color:var(--on-sv)}

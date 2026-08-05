@@ -1,0 +1,60 @@
+<div class="page-content">
+  <div class="page-header">
+    <div><h1 class="page-title">Companies</h1><p class="page-sub">Manage your company accounts</p></div>
+    <button class="primary-btn" (click)="showAdd=!showAdd">{{ showAdd ? "Cancel" : "+ Add Company" }}</button>
+  </div>
+
+  <div class="form-card" *ngIf="showAdd">
+    <div class="field-grid">
+      <div class="field-group"><label class="field-label">Company Name *</label>
+        <input type="text" class="field-input" [(ngModel)]="newCompany.name" placeholder="Company name" /></div>
+      <div class="field-group"><label class="field-label">Industry</label>
+        <input type="text" class="field-input" [(ngModel)]="newCompany.industry" placeholder="e.g. Pharma" /></div>
+      <div class="field-group"><label class="field-label">Country</label>
+        <input type="text" class="field-input" [(ngModel)]="newCompany.country" /></div>
+      <div class="field-group"><label class="field-label">Website</label>
+        <input type="text" class="field-input" [(ngModel)]="newCompany.website" placeholder="https://" /></div>
+    </div>
+    <div class="form-actions">
+      <button class="cancel-btn" (click)="showAdd=false">Cancel</button>
+      <button class="save-btn" (click)="addCompany()">Add Company</button>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><p>Loading companies...</p>
+  </div>
+  <div class="error-banner" *ngIf="!loading && error">{{ error }}</div>
+
+  <div *ngIf="!loading && !error">
+    <div class="toolbar">
+      <input type="text" class="search-input" [(ngModel)]="search" placeholder="Search companies..." />
+    </div>
+    <div class="table-card">
+      <table class="tbl">
+        <thead><tr><th>COMPANY</th><th>INDUSTRY</th><th>COUNTRY</th><th>CUSTOMERS</th><th>STATUS</th><th class="tr">ACTIONS</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let c of filtered">
+            <td>
+              <div class="company-cell">
+                <div class="av">{{ getInitials(c.name) }}</div>
+                <span class="fw6">{{ c.name }}</span>
+              </div>
+            </td>
+            <td class="muted">{{ c.industry }}</td>
+            <td class="muted">{{ c.country }}</td>
+            <td><span class="count-pill">{{ c.customers }}</span></td>
+            <td><span class="status-badge" [class.active]="c.status==='Active'">{{ c.status }}</span></td>
+            <td class="tr">
+              <button class="tbl-btn">Edit</button>
+              <button class="tbl-btn danger" (click)="delete(c.id)">Delete</button>
+            </td>
+          </tr>
+          <tr *ngIf="filtered.length===0">
+            <td colspan="6" class="empty-row">No companies found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

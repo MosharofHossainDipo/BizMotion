@@ -1,0 +1,129 @@
+<div class="page-content">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Customers</h1>
+      <p class="page-sub">Manage and monitor your customer database</p>
+    </div>
+    <div class="header-actions">
+      <div class="search-wrap">
+        <input type="text" class="search-input" [(ngModel)]="search" placeholder="Search customers..." />
+      </div>
+      <button class="secondary-btn" *ngIf="canCreate" (click)="openImportModal()">⬆ Import Customers</button>
+      <button class="primary-btn" *ngIf="canCreate" (click)="addNew()">+ Add Customer</button>
+    </div>
+  </div>
+
+  <div class="error-banner" *ngIf="error">{{ error }}<button class="retry-btn" (click)="load()">Retry</button></div>
+
+  <div class="table-card">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>CUSTOMER</th><th>EMAIL</th><th>PHONE</th><th>GROUP</th><th>STATUS</th>
+          <th class="tr" *ngIf="canEdit || canDelete">ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading">
+          <td colspan="6" class="loading-row">
+            <div class="loading-inner"><div class="spinner"></div><span>Loading customers...</span></div>
+          </td>
+        </tr>
+        <ng-container *ngIf="!loading">
+          <tr *ngFor="let c of filtered">
+            <td>
+              <div class="customer-cell">
+                <div class="av" [ngClass]="avatarClass(c.name)">{{ getInitials(c.name) }}</div>
+                <div><p class="c-name">{{ c.name }}</p><p class="c-code">{{ c.customerCode }}</p></div>
+              </div>
+            </td>
+            <td class="muted">{{ c.email }}</td>
+            <td class="muted">{{ c.phone || "-" }}</td>
+            <td>
+              <span class="group-badge" *ngIf="c.customerGroup">{{ c.customerGroup }}</span>
+              <span class="muted" *ngIf="!c.customerGroup">-</span>
+            </td>
+            <td>
+              <span class="status-badge" [class.active]="c.status==='Active'" [class.inactive]="c.status!=='Active'">{{ c.status }}</span>
+            </td>
+            <td class="tr" *ngIf="canEdit || canDelete">
+              <button class="tbl-btn" *ngIf="canEdit" (click)="toggleStatus(c)">
+                {{ c.status === "Active" ? "Deactivate" : "Activate" }}
+              </button>
+              <button class="tbl-btn danger" *ngIf="canDelete" [disabled]="deletingId===c.id" (click)="delete(c)">
+                {{ deletingId===c.id ? "..." : "Delete" }}
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filtered.length===0">
+            <td colspan="6" class="empty-row">
+              <div class="empty-state">
+                <p class="empty-title">No customers found</p>
+                <p class="empty-sub">{{ search ? "No results for \"" + search + "\"" : "Add your first customer." }}</p>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+    <div class="table-footer" *ngIf="!loading && customers.length > 0">
+      Showing {{ filtered.length }} of {{ customers.length }} customers
+    </div>
+  </div>
+
+  <!-- Import Customers Modal -->
+  <div class="modal-overlay" *ngIf="showImportModal" (click)="closeImportModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Import Customers</h3>
+        <button class="modal-close" (click)="closeImportModal()" [disabled]="importing">&times;</button>
+      </div>
+
+      <div class="modal-body" *ngIf="!importResult">
+        <div class="drop-zone"
+             [class.drag-over]="isDragOver"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave($event)"
+             (drop)="onDrop($event)">
+          <p class="drop-title">Drag &amp; drop your file here</p>
+          <p class="drop-sub">Excel (.xlsx, .xls) or CSV (.csv)</p>
+          <label class="browse-btn">
+            Browse File
+            <input type="file" accept=".csv,.xlsx,.xls" (change)="onFileSelected($event)" hidden />
+          </label>
+          <p class="selected-file" *ngIf="selectedFile">Selected: {{ selectedFile.name }}</p>
+        </div>
+
+        <button class="link-btn" (click)="downloadTemplate()">Download Sample Template</button>
+
+        <p class="modal-error" *ngIf="importError">{{ importError }}</p>
+      </div>
+
+      <div class="modal-body" *ngIf="importResult">
+        <div class="import-summary">
+          <p class="summary-title">Import Completed</p>
+          <div class="summary-grid">
+            <div class="summary-stat"><span class="stat-num ok">{{ importResult.imported }}</span><span class="stat-label">Imported</span></div>
+            <div class="summary-stat"><span class="stat-num warn">{{ importResult.duplicates }}</span><span class="stat-label">Duplicates</span></div>
+            <div class="summary-stat"><span class="stat-num err">{{ importResult.invalid }}</span><span class="stat-label">Invalid</span></div>
+            <div class="summary-stat"><span class="stat-num">{{ importResult.totalRows }}</span><span class="stat-label">Total Rows</span></div>
+          </div>
+          <div class="error-list" *ngIf="importResult.errors.length > 0">
+            <p class="error-list-title">Details:</p>
+            <p class="error-line" *ngFor="let e of importResult.errors">{{ e }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" *ngIf="!importResult">
+        <button class="tbl-btn" (click)="closeImportModal()" [disabled]="importing">Cancel</button>
+        <button class="primary-btn" (click)="runImport()" [disabled]="importing || !selectedFile">
+          {{ importing ? "Importing..." : "Import" }}
+        </button>
+      </div>
+      <div class="modal-footer" *ngIf="importResult">
+        <button class="primary-btn" (click)="closeImportModal()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>

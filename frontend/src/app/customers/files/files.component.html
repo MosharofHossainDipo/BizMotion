@@ -1,0 +1,25 @@
+<div class="page-content">
+  <div class="page-header">
+    <div><h1 class="page-title">Customer Files</h1><p class="page-sub">Manage documents and attachments</p></div>
+    <div class="header-actions">
+      <input type="text" class="search-input" [(ngModel)]="search" placeholder="Search files..." />
+      <button class="primary-btn">+ Upload File</button>
+    </div>
+  </div>
+  <div class="table-card">
+    <table class="tbl">
+      <thead><tr><th>FILE NAME</th><th>TYPE</th><th>SIZE</th><th>CUSTOMER</th><th>DATE</th><th class="tr">ACTIONS</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let f of filtered">
+          <td><div class="file-cell"><div class="file-icon" [style.background]="iconBg(f.icon)" [style.color]="iconColor(f.icon)">{{ f.type }}</div><span class="fw6">{{ f.name }}</span></div></td>
+          <td><span class="type-badge">{{ f.type }}</span></td>
+          <td class="muted">{{ f.size }}</td>
+          <td class="muted">{{ f.customer }}</td>
+          <td class="muted">{{ f.date }}</td>
+          <td class="tr"><button class="tbl-btn">Download</button><button class="tbl-btn danger" (click)="delete(f.id)">Delete</button></td>
+        </tr>
+        <tr *ngIf="filtered.length===0"><td colspan="6" class="empty-row">No files found.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
