@@ -2,5 +2,5 @@
 
 Full-stack business management platform (Spring Boot + Angular).
 
-- \ackend/\ — Spring Boot REST API
-- \rontend/\ — Angular client
+- \Backend/\ — Spring Boot REST API
+- \Frontend/\ — Angular client
